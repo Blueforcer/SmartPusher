@@ -1,0 +1,910 @@
+{
+  "version": "1.00",
+  "projectName": "",
+  "author": "Micro",
+  "items": [
+    {
+      "parentId": 0,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Buttons",
+        "variableName": "Buttons",
+        "id": 1,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 1",
+        "variableName": "Button1",
+        "id": 14,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn1Click",
+        "id": 30,
+        "eepromAddress": 169,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn1LongClick",
+        "id": 31,
+        "eepromAddress": 171,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn1DoubleClick",
+        "id": 32,
+        "eepromAddress": 170,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn1Down",
+        "id": 33,
+        "eepromAddress": 172,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn1Up",
+        "id": 34,
+        "eepromAddress": 173,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 2",
+        "variableName": "Button2",
+        "id": 35,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn2Click",
+        "id": 36,
+        "eepromAddress": 103,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn2LongClick",
+        "id": 37,
+        "eepromAddress": 104,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn2DoubleClick",
+        "id": 38,
+        "eepromAddress": 105,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn2Down",
+        "id": 39,
+        "eepromAddress": 106,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn2Up",
+        "id": 40,
+        "eepromAddress": 107,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 3",
+        "variableName": "Button3",
+        "id": 41,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn3Click",
+        "id": 42,
+        "eepromAddress": 174,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn3LongClick",
+        "id": 43,
+        "eepromAddress": 175,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn3DoubleClick",
+        "id": 44,
+        "eepromAddress": 176,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn3Down",
+        "id": 45,
+        "eepromAddress": 177,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn3Up",
+        "id": 46,
+        "eepromAddress": 178,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 4",
+        "variableName": "Button4",
+        "id": 47,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn4Click",
+        "id": 48,
+        "eepromAddress": 179,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn4LongClick",
+        "id": 49,
+        "eepromAddress": 180,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn4DoubleClick",
+        "id": 50,
+        "eepromAddress": 181,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn4Down",
+        "id": 51,
+        "eepromAddress": 182,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn4Up",
+        "id": 52,
+        "eepromAddress": 183,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 5",
+        "variableName": "Button5",
+        "id": 53,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn5Click",
+        "id": 54,
+        "eepromAddress": 184,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn5LongClick",
+        "id": 55,
+        "eepromAddress": 185,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn5DoubleClick",
+        "id": 56,
+        "eepromAddress": 186,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn5Down",
+        "id": 57,
+        "eepromAddress": 187,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn5Up",
+        "id": 58,
+        "eepromAddress": 188,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 6",
+        "variableName": "Button6",
+        "id": 59,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn6Click",
+        "id": 60,
+        "eepromAddress": 189,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn6LongClick",
+        "id": 61,
+        "eepromAddress": 190,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn6DoubleClick",
+        "id": 62,
+        "eepromAddress": 191,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn6Down",
+        "id": 63,
+        "eepromAddress": 192,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn6Up",
+        "id": 64,
+        "eepromAddress": 193,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 7",
+        "variableName": "Button7",
+        "id": 65,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn7Click",
+        "id": 66,
+        "eepromAddress": 194,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn7LongClick",
+        "id": 67,
+        "eepromAddress": 195,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn7DoubleClick",
+        "id": 68,
+        "eepromAddress": 196,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn7Down",
+        "id": 69,
+        "eepromAddress": 197,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn7Up",
+        "id": 70,
+        "eepromAddress": 198,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 1,
+      "type": "subMenu",
+      "item": {
+        "secured": false,
+        "name": "Button 8",
+        "variableName": "Button8",
+        "id": 71,
+        "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Click",
+        "variableName": "btn8Click",
+        "id": 72,
+        "eepromAddress": 199,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Long click",
+        "variableName": "btn8LongClick",
+        "id": 73,
+        "eepromAddress": 200,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Doubleclick",
+        "variableName": "btn8DoubleClick",
+        "id": 74,
+        "eepromAddress": 201,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Down",
+        "variableName": "btn8Down",
+        "id": 75,
+        "eepromAddress": 202,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "boolItem",
+      "item": {
+        "naming": "YES_NO",
+        "name": "Up",
+        "variableName": "btn8Up",
+        "id": 76,
+        "eepromAddress": 203,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 0,
+      "type": "analogItem",
+      "item": {
+        "maxValue": 48,
+        "offset": -24,
+        "divisor": 1,
+        "unitName": "h",
+        "name": "UTC Offset",
+        "variableName": "UTCOffset",
+        "id": 82,
+        "eepromAddress": 302,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 0,
+      "type": "actionMenu",
+      "item": {
+        "name": "Clear Settings",
+        "variableName": "ClearSettings",
+        "id": 81,
+        "eepromAddress": -1,
+        "functionName": "onClearSettings",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 0,
+      "type": "actionMenu",
+      "item": {
+        "name": "Save all",
+        "variableName": "SaveAll",
+        "id": 83,
+        "eepromAddress": -1,
+        "functionName": "onSaveAll",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 0,
+      "type": "actionMenu",
+      "item": {
+        "name": "Exit",
+        "variableName": "Exit",
+        "id": 84,
+        "eepromAddress": -1,
+        "functionName": "onExit",
+        "readOnly": false,
+        "localOnly": true,
+        "visible": true
+      }
+    }
+  ],
+  "codeOptions": {
+    "embeddedPlatform": "ARDUINO_ESP32",
+    "lastDisplayUuid": "fd998437-c4b2-4386-ba88-d0ae7c20620b",
+    "lastInputUuid": "2a3ae3ba-05f4-4c9c-aad3-3ddc88df9049",
+    "lastRemoteUuid": "2c101fec-1f7d-4ff3-8d2b-992ad41e7fcb",
+    "lastRemoteUuids": [
+      "2c101fec-1f7d-4ff3-8d2b-992ad41e7fcb",
+      "da552323-157d-4914-8410-d5b4ff2293a4"
+    ],
+    "lastThemeUuid": "815316bb-76c9-436a-8f83-be0bced963df",
+    "applicationUUID": "2f01b637-3a3d-4f52-b7d6-f202ba4f0747",
+    "applicationName": "APBA",
+    "lastProperties": [
+      {
+        "name": "DISPLAY_VARIABLE",
+        "latestValue": "gfx",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_TYPE",
+        "latestValue": "U8G2_SSD1306_128X64_NONAME_F_HW_I2C",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_ROTATION",
+        "latestValue": "U8G2_R0",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_CLOCK_PIN",
+        "latestValue": "-1",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_DATA_PIN",
+        "latestValue": "-1",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_RESET_PIN",
+        "latestValue": "-1",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_CS_PIN",
+        "latestValue": "U8X8_PIN_NONE",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "DISPLAY_RS_PIN",
+        "latestValue": "U8X8_PIN_NONE",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "UPDATES_PER_SEC",
+        "latestValue": "10",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "YIELDING_WIRE_CB",
+        "latestValue": "false",
+        "subsystem": "DISPLAY"
+      },
+      {
+        "name": "PULLUP_LOGIC",
+        "latestValue": "true",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "INTERRUPT_SWITCHES",
+        "latestValue": "false",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "SWITCH_IODEVICE",
+        "latestValue": "devicePins",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ENCODER_UP_PIN",
+        "latestValue": "32",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ENCODER_DOWN_PIN",
+        "latestValue": "25",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ENCODER_BACK_PIN",
+        "latestValue": "27",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ENCODER_NEXT_PIN",
+        "latestValue": "12",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ENCODER_OK_PIN",
+        "latestValue": "0",
+        "subsystem": "INPUT"
+      },
+      {
+        "name": "ASWEB_USE_PREPACKAGED",
+        "latestValue": "true",
+        "subsystem": "REMOTE"
+      },
+      {
+        "name": "ASWEB_CONCURRENT",
+        "latestValue": "2",
+        "subsystem": "REMOTE"
+      },
+      {
+        "name": "WEBSOCKET_ENDPOINT",
+        "latestValue": "/ws",
+        "subsystem": "REMOTE"
+      },
+      {
+        "name": "WEBSERVER_PORT",
+        "latestValue": "80",
+        "subsystem": "REMOTE"
+      },
+      {
+        "name": "ITEM_FONT",
+        "latestValue": "def:,1",
+        "subsystem": "THEME"
+      },
+      {
+        "name": "TITLE_FONT",
+        "latestValue": "def:,1",
+        "subsystem": "THEME"
+      },
+      {
+        "name": "TITLE_BORDER_WIDTH",
+        "latestValue": "1",
+        "subsystem": "THEME"
+      },
+      {
+        "name": "TITLE_TO_ITEM_SPACING",
+        "latestValue": "2",
+        "subsystem": "THEME"
+      },
+      {
+        "name": "TITLE_SHOW_MODE",
+        "latestValue": "TITLE_FIRST_ROW",
+        "subsystem": "THEME"
+      }
+    ],
+    "namingRecursive": false,
+    "saveToSrc": true,
+    "useCppMain": true,
+    "eepromDefinition": "eeprom:",
+    "authenticatorDefinition": "",
+    "projectIoExpanders": [
+      "deviceIO:"
+    ]
+  }
+}
