@@ -27,3 +27,9 @@ void CALLBACK_FUNCTION onSaveAll(int id) {
 void CALLBACK_FUNCTION onExit(int id) {
     // TODO - your menu change code
 }
+
+
+
+void CALLBACK_FUNCTION Light(int id) {
+    // TODO - your menu change code
+}

@@ -134,36 +134,9 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 
 void ButtonManager_::handleSingleClick(uint8_t btn)
 {
-    if (MenuEntered)
-    {
-        switch (btn)
-        {
-        case 0:
-           // switches.pushSwitch(Btn_Up, true);
-            break;
-        case 1:
-           // switches.pushSwitch(Btn_Down, true);
-            break;
-        case 2:
-           // switches.pushSwitch(Btn_Left, false);
-            break;
-        case 3:
-           // switches.pushSwitch(Btn_Right, false);
-            break;
-        case 7:
-           // menuMgr.onMenuSelect(false);
-            break;
-
-        default:
-            return;
-            break;
-        }
-    }
-
     if (ClickItems[btn]->getBoolean() && !MenuEntered)
     {
         sendState("click", btn);
-        leds[btn].FadeOn(500).Repeat(1);
     }
 }
 
@@ -179,32 +152,6 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 {
 
     longPressed[btn] = true;
-
-    if (MenuEntered)
-    {
-        switch (btn)
-        {
-        case 0:
-            //switches.pushSwitch(Btn_Up, true);
-            break;
-        case 1:
-            //switches.pushSwitch(Btn_Down, true);
-            break;
-        case 2:
-           // switches.pushSwitch(Btn_Left, true);
-            break;
-        case 3:
-            //switches.pushSwitch(Btn_Right, true);
-            break;
-        case 7:
-           // menuMgr.onMenuSelect(true);
-            break;
-
-        default:
-            return;
-            break;
-        }
-    }
 
     if (LongClickItems[btn]->getBoolean() && !MenuEntered)
     {
@@ -229,8 +176,6 @@ void ButtonManager_::handleReleased(uint8_t btn)
     }
 }
 
-
-
 void ButtonManager_::sendState(String type, int btn)
 {
     String json;
@@ -243,21 +188,6 @@ void ButtonManager_::sendState(String type, int btn)
     // Serial.printf("%c%c%c%c%s", (length & 0xFF000000) >> 24, (length & 0x00FF0000) >> 16, (length & 0x0000FF00) >> 8, (length & 0x000000FF), json.c_str());
 }
 
-void ButtonManager_::setStates()
-{
-    for (int i = 0; i < 8; i++)
-    {
-        if (getButtonState(i))
-        {
-            leds[i].FadeOn(1000).Repeat(1);
-        }
-        else
-        {
-            leds[i].FadeOff(1000).Repeat(1);
-        }
-    }
-}
-
 bool ButtonManager_::getButtonState(uint8_t btn)
 {
     return states[btn];
@@ -267,4 +197,37 @@ void ButtonManager_::setButtonState(uint8_t btn, bool state)
 {
     states[btn] = state;
     setStates();
+}
+
+void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
+{
+    switch (mode)
+    {
+    case 0:
+        leds[btn].Off();
+        break;
+    case 1:
+        leds[btn].On();
+        break;
+    case 2:
+        leds[btn].Breathe(2000).Forever();
+        break;
+    case 3:
+        leds[btn].Off();
+        break;
+    default:
+        break;
+    }
+}
+
+void ButtonManager_::setStates()
+{
+    setButtonLight(0, menuLightBtn1.getCurrentValue());
+    setButtonLight(1, menuLightBtn2.getCurrentValue());
+    setButtonLight(2, menuLightBtn3.getCurrentValue());
+    setButtonLight(3, menuLightBtn4.getCurrentValue());
+    setButtonLight(4, menuLightBtn5.getCurrentValue());
+    setButtonLight(5, menuLightBtn6.getCurrentValue());
+    setButtonLight(6, menuLightBtn7.getCurrentValue());
+    setButtonLight(7, menuLightBtn8.getCurrentValue());
 }

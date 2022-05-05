@@ -64,6 +64,7 @@ public:
 
     bool getButtonState(uint8_t);
     void setButtonState(uint8_t, bool);
+    void setButtonLight(uint8_t btn, uint8_t mode);
 
     AceButton *getButton(uint8_t);
 };

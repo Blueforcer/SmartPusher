@@ -175,3 +175,8 @@ void CALLBACK_FUNCTION onExit(int id)
     ButtonManager.LeaveMenuState();
     renderer.takeOverDisplay(renderTitleScreen);
 }
+
+void CALLBACK_FUNCTION Light(int id)
+{
+ ButtonManager.setStates();
+}

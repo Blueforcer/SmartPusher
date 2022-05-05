@@ -33,6 +33,26 @@
     },
     {
       "parentId": 14,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn1",
+        "id": 85,
+        "eepromAddress": 304,
+        "functionName": "Light",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 14,
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
@@ -110,6 +130,26 @@
         "variableName": "Button2",
         "id": 35,
         "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 35,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn2",
+        "id": 86,
+        "eepromAddress": 306,
+        "functionName": "Light",
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -201,6 +241,26 @@
     },
     {
       "parentId": 41,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn3",
+        "id": 87,
+        "eepromAddress": 308,
+        "functionName": "Light",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 41,
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
@@ -278,6 +338,26 @@
         "variableName": "Button4",
         "id": 47,
         "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 47,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn4",
+        "id": 88,
+        "eepromAddress": 310,
+        "functionName": "Light",
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -369,6 +449,26 @@
     },
     {
       "parentId": 53,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn5",
+        "id": 89,
+        "eepromAddress": 312,
+        "functionName": "Light",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 53,
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
@@ -446,6 +546,26 @@
         "variableName": "Button6",
         "id": 59,
         "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 59,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "statuc off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn6",
+        "id": 90,
+        "eepromAddress": 314,
+        "functionName": "Light",
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -537,6 +657,26 @@
     },
     {
       "parentId": 65,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn7",
+        "id": 91,
+        "eepromAddress": 316,
+        "functionName": "Light",
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 65,
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
@@ -614,6 +754,26 @@
         "variableName": "Button8",
         "id": 71,
         "eepromAddress": -1,
+        "readOnly": false,
+        "localOnly": false,
+        "visible": true
+      }
+    },
+    {
+      "parentId": 71,
+      "type": "enumItem",
+      "item": {
+        "enumEntries": [
+          "static off",
+          "static on",
+          "breathe",
+          "extern"
+        ],
+        "name": "Light",
+        "variableName": "LightBtn8",
+        "id": 92,
+        "eepromAddress": 318,
+        "functionName": "Light",
         "readOnly": false,
         "localOnly": false,
         "visible": true

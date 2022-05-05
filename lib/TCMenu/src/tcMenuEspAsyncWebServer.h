@@ -40,7 +40,9 @@ namespace tcremote {
         uint8_t remoteNum;
     public:
         explicit EspAsyncWebSocketClient(AsyncWebSocket *webSock);
-        uint32_t getClientId() const { return wsClientId; }
+
+        [[nodiscard]] uint32_t getClientId() const { return wsClientId; }
+
         int fillReadBuffer(uint8_t *dataBuffer, int maxSize) override { return 0; }
 
         void flush() override;
