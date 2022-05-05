@@ -70,7 +70,7 @@ void ButtonManager_::tick()
     }
 
     // Check if the menu buttons are being pressed. If so, show menu
-    if (longPressed[0] && longPressed[7])
+    if (longPressed[0] && longPressed[1])
     {
         for (int i = 0; i < 8; i++)
         {
