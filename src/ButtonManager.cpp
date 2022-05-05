@@ -50,6 +50,8 @@ void ButtonManager_::setup()
     buttonConfig->setFeature(ButtonConfig::kFeatureDoubleClick);
     buttonConfig->setFeature(ButtonConfig::kFeatureLongPress);
     buttonConfig->setFeature(ButtonConfig::kFeatureRepeatPress);
+    buttonConfig->setFeature(
+        ButtonConfig::kFeatureSuppressClickBeforeDoubleClick);
     setStates();
 }
 
@@ -136,6 +138,7 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 {
     if (ClickItems[btn]->getBoolean() && !MenuEntered)
     {
+        SystemManager.ShowButtonScreen("Push");
         sendState("click", btn);
     }
 }
@@ -144,6 +147,7 @@ void ButtonManager_::handleDoubleClick(uint8_t btn)
 {
     if (DoubleClickItems[btn]->getBoolean() && !MenuEntered)
     {
+        SystemManager.ShowButtonScreen("Double");
         sendState("double", btn);
     }
 }
@@ -155,6 +159,7 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 
     if (LongClickItems[btn]->getBoolean() && !MenuEntered)
     {
+        SystemManager.ShowButtonScreen("Long");
         sendState("long", btn);
     }
 }

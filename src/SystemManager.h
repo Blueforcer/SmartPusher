@@ -17,6 +17,7 @@ class SystemManager_
         void tick();
         void EnterMenu();
         void ShowTitleScreen();
+        void ShowButtonScreen(const char* type);
 };
 
 extern SystemManager_ &SystemManager;

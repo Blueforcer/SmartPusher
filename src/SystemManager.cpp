@@ -11,6 +11,7 @@
 
 unsigned long previousMillis = 0;
 const long interval = 1000;
+const char *Pushtype;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -41,8 +42,8 @@ void startWiFi()
         delay(250);
         Serial.print(".");
     }
-     Serial.println("Connected to the WiFi network");
-     Serial.println(WiFi.localIP());
+    Serial.println("Connected to the WiFi network");
+    Serial.println(WiFi.localIP());
 }
 
 void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
@@ -56,7 +57,7 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
         timeClient.setTimeOffset(menuUTCOffset.getCurrentValue() * 3600);
         timeClient.update();
         gfx.setFont(u8g2_font_timB24_tr);
-        gfx.drawStr(8, 48, timeClient.getFormattedTime().c_str());
+        gfx.drawStr(8, 45, timeClient.getFormattedTime().c_str());
 
         if (WiFi.status() != WL_CONNECTED)
         {
@@ -64,6 +65,23 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
             gfx.drawStr(22, 62, "please check WiFi");
         }
         gfx.sendBuffer();
+    }
+}
+
+void renderButtonScreen(unsigned int encoderValue, RenderPressMode clicked)
+{
+    unsigned long currentMillis = millis();
+    gfx.clearBuffer();
+
+    gfx.setFont(u8g2_font_timB24_tr);
+    gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(Pushtype)) / 2, 45, Pushtype);
+
+    gfx.sendBuffer();
+
+    if (currentMillis - previousMillis >= interval)
+    {
+        previousMillis = currentMillis;
+        renderer.takeOverDisplay(renderTitleScreen);
     }
 }
 
@@ -75,6 +93,12 @@ void CALLBACK_FUNCTION onTakeOverDisplay(int /*id*/)
 void SystemManager_::ShowTitleScreen()
 {
     renderer.takeOverDisplay(renderTitleScreen);
+}
+
+void SystemManager_::ShowButtonScreen(const char *type)
+{
+    Pushtype = type;
+    renderer.takeOverDisplay(renderButtonScreen);
 }
 
 void SystemManager_::EnterMenu()
@@ -178,5 +202,5 @@ void CALLBACK_FUNCTION onExit(int id)
 
 void CALLBACK_FUNCTION Light(int id)
 {
- ButtonManager.setStates();
+    ButtonManager.setStates();
 }
