@@ -138,7 +138,7 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 {
     if (ClickItems[btn]->getBoolean() && !MenuEntered)
     {
-        SystemManager.ShowButtonScreen("Push");
+        SystemManager.ShowButtonScreen("Click");
         sendState("click", btn);
     }
 }
