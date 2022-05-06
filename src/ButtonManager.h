@@ -61,7 +61,7 @@ public:
     void setStates();
     void checkButtons();
     void LeaveMenuState();
-
+    void CheckMenu();
     bool getButtonState(uint8_t);
     void setButtonState(uint8_t, bool);
     void setButtonLight(uint8_t btn, uint8_t mode);

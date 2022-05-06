@@ -68,8 +68,14 @@ void ButtonManager_::tick()
     {
         leds[i].Update();
     }
-
+    CheckMenu();
     // Check if the menu buttons are being pressed. If so, show menu
+
+    checkButtons();
+}
+
+void ButtonManager_::CheckMenu()
+{
     if (longPressed[0] && longPressed[1])
     {
         for (int i = 0; i < 8; i++)
@@ -92,7 +98,6 @@ void ButtonManager_::tick()
             return;
         }
     }
-    checkButtons();
 }
 
 AceButton *ButtonManager_::getButton(uint8_t index)
@@ -156,7 +161,8 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 {
 
     longPressed[btn] = true;
-
+    if (!MenuEntered)
+        CheckMenu();
     if (LongClickItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Long");

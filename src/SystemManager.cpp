@@ -13,6 +13,9 @@ unsigned long previousMillis = 0;
 const long interval = 1000;
 const char *Pushtype;
 
+const int FW_VERSION = 0001;
+const char* fwUrlBase = "http://blueforcer.de/fota/";
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
@@ -54,8 +57,7 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
         // save the last time you blinked the LED
         gfx.clearBuffer();
         previousMillis = currentMillis;
-        timeClient.setTimeOffset(menuUTCOffset.getCurrentValue() * 3600);
-        timeClient.update();
+       
         gfx.setFont(u8g2_font_timB24_tr);
         gfx.drawStr(8, 45, timeClient.getFormattedTime().c_str());
 
@@ -143,6 +145,8 @@ void SystemManager_::setup()
         } });
     timeClient.begin();
     renderer.takeOverDisplay(renderTitleScreen);
+    timeClient.setTimeOffset(menuUTCOffset.getCurrentValue() * 3600);
+    timeClient.update();
 }
 
 void SystemManager_::tick()

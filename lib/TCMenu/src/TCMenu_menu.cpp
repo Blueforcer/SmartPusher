@@ -215,9 +215,7 @@ void setupMenu() {
     gfx.begin();
     renderer.setUpdatesPerSecond(10);
     switches.initialise(internalDigitalIo(), true);
-    menuMgr.initForUpDownOk(&renderer, &menuButtons, 25, 32, 0);
-    menuMgr.setBackButton(27);
-    menuMgr.setNextButton(12);
+    menuMgr.initForUpDownOk(&renderer, &menuButtons, 25, 32, 27);
     remoteServer.addConnection(&webClient1);
     remoteServer.addConnection(&webClient2);
     renderer.setTitleMode(BaseGraphicalRenderer::TITLE_FIRST_ROW);

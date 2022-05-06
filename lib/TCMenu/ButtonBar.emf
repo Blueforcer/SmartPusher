@@ -999,17 +999,17 @@
       },
       {
         "name": "ENCODER_BACK_PIN",
-        "latestValue": "27",
+        "latestValue": "-1",
         "subsystem": "INPUT"
       },
       {
         "name": "ENCODER_NEXT_PIN",
-        "latestValue": "12",
+        "latestValue": "-1",
         "subsystem": "INPUT"
       },
       {
         "name": "ENCODER_OK_PIN",
-        "latestValue": "0",
+        "latestValue": "27",
         "subsystem": "INPUT"
       },
       {
