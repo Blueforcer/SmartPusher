@@ -3,12 +3,6 @@
 #include <ArduinoJson.h>
 #include "SwitchInput.h"
 
-#define Btn_Up 50
-#define Btn_Down 51
-#define Btn_Left 52
-#define Btn_Right 53
-#define Btn_Ok 54
-
 BooleanMenuItem *ClickItems[]{&menubtn1Click, &menubtn2Click, &menubtn3Click, &menubtn4Click, &menubtn5Click, &menubtn6Click, &menubtn7Click, &menubtn8Click};
 BooleanMenuItem *LongClickItems[]{&menubtn1LongClick, &menubtn2LongClick, &menubtn3LongClick, &menubtn4LongClick, &menubtn5LongClick, &menubtn6LongClick, &menubtn7LongClick, &menubtn8LongClick};
 BooleanMenuItem *DoubleClickItems[]{&menubtn1DoubleClick, &menubtn2DoubleClick, &menubtn3DoubleClick, &menubtn4DoubleClick, &menubtn5DoubleClick, &menubtn6DoubleClick, &menubtn7DoubleClick, &menubtn8DoubleClick};
@@ -16,6 +10,8 @@ BooleanMenuItem *DownItems[]{&menubtn1Down, &menubtn2Down, &menubtn3Down, &menub
 BooleanMenuItem *UpItems[]{&menubtn1Up, &menubtn2Up, &menubtn3Up, &menubtn4Up, &menubtn5Up, &menubtn6Up, &menubtn7Up, &menubtn8Up};
 
 bool MenuEntered = false;
+bool ResetLights = false;
+unsigned long prevMillis = 0;
 
 // The getter for the instantiated singleton instance
 ButtonManager_ &ButtonManager_::getInstance()
@@ -52,6 +48,7 @@ void ButtonManager_::setup()
     buttonConfig->setFeature(ButtonConfig::kFeatureRepeatPress);
     buttonConfig->setFeature(
         ButtonConfig::kFeatureSuppressClickBeforeDoubleClick);
+    buttonConfig->setDoubleClickDelay(300);
     setStates();
 }
 
@@ -69,9 +66,26 @@ void ButtonManager_::tick()
         leds[i].Update();
     }
     CheckMenu();
-    // Check if the menu buttons are being pressed. If so, show menu
 
+    // Check if the menu buttons are being pressed. If so, show menu
     checkButtons();
+
+    if (ResetLights)
+    {
+        unsigned long currentMillis = millis();
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            if (leds[i].IsRunning())
+                return;
+        }
+
+        if (currentMillis - prevMillis >= 1000)
+        {
+            prevMillis = currentMillis;
+            setStates();
+            ResetLights = false;
+        }
+    }
 }
 
 void ButtonManager_::CheckMenu()
@@ -139,12 +153,61 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
     }
 }
 
+void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
+{
+    int count = 1;
+    switch (type)
+    {
+    case 1:
+        leds[btn].FadeOn(50).FadeOff(800).Repeat(type);
+
+        for (uint8_t i = btn + 1; i < 8; i++)
+        {
+            leds[i].DelayBefore(50 * ++count).FadeOn(400).FadeOff(400).Repeat(type);
+        }
+        count = 1;
+        for (int x = btn - 1; x >= 0; x--)
+        {
+            leds[x].DelayBefore(50 * ++count).FadeOn(400).FadeOff(400).Repeat(type);
+        }
+        break;
+    case 2:
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            leds[i].Blink(100, 100).Repeat(2);
+        }
+        break;
+    case 3:
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            leds[i].Breathe(2000).Repeat(1);
+        }
+        break;
+    case 4:
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            leds[i].FadeOn(200).Repeat(1);
+        }
+        break;
+    case 5:
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            leds[i].FadeOff(200).Repeat(1);
+        }
+        break;
+    }
+    ResetLights = true;
+    prevMillis = millis();
+}
+
 void ButtonManager_::handleSingleClick(uint8_t btn)
 {
     if (ClickItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Click");
-        sendState("click", btn);
+
+        ShowAnimation(1, btn);
+        SendState("click", btn);
     }
 }
 
@@ -153,7 +216,9 @@ void ButtonManager_::handleDoubleClick(uint8_t btn)
     if (DoubleClickItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Double");
-        sendState("double", btn);
+
+        ShowAnimation(2, btn);
+        SendState("double", btn);
     }
 }
 
@@ -166,7 +231,8 @@ void ButtonManager_::handleLongClick(uint8_t btn)
     if (LongClickItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Long");
-        sendState("long", btn);
+        ShowAnimation(3, btn);
+        SendState("long", btn);
     }
 }
 
@@ -174,7 +240,9 @@ void ButtonManager_::handlePressed(uint8_t btn)
 {
     if (DownItems[btn]->getBoolean() && !MenuEntered)
     {
-        sendState("down", btn);
+        SystemManager.ShowButtonScreen("Down");
+        ShowAnimation(4, btn);
+        SendState("down", btn);
     }
 }
 
@@ -183,11 +251,13 @@ void ButtonManager_::handleReleased(uint8_t btn)
     longPressed[btn] = false;
     if (UpItems[btn]->getBoolean() && !MenuEntered)
     {
-        sendState("up", btn);
+        SystemManager.ShowButtonScreen("Up");
+        ShowAnimation(5, btn);
+        SendState("up", btn);
     }
 }
 
-void ButtonManager_::sendState(String type, int btn)
+void ButtonManager_::SendState(String type, int btn)
 {
     String json;
     StaticJsonDocument<200> doc;
@@ -215,6 +285,7 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
     switch (mode)
     {
     case 0:
+
         leds[btn].Off();
         break;
     case 1:
