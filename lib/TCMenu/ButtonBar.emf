@@ -851,23 +851,6 @@
     },
     {
       "parentId": 0,
-      "type": "analogItem",
-      "item": {
-        "maxValue": 48,
-        "offset": -24,
-        "divisor": 1,
-        "unitName": "h",
-        "name": "UTC Offset",
-        "variableName": "UTCOffset",
-        "id": 82,
-        "eepromAddress": 302,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 0,
       "type": "actionMenu",
       "item": {
         "name": "Clear Settings",

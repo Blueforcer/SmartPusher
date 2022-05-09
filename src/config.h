@@ -5,3 +5,5 @@
 #define MQTTuser "netplus"
 #define MQTTpass "netpluscore"
 #define MQTTprefix "APBA"
+#define Colonblink true
+#define UTCoffset 2

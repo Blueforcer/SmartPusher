@@ -30,8 +30,6 @@ const PROGMEM AnyMenuInfo minfoSaveAll = { "Save all", 83, 0xffff, 0, onSaveAll 
 ActionMenuItem menuSaveAll(&minfoSaveAll, &menuExit);
 const PROGMEM AnyMenuInfo minfoClearSettings = { "Clear Settings", 81, 0xffff, 0, onClearSettings };
 ActionMenuItem menuClearSettings(&minfoClearSettings, &menuSaveAll);
-const PROGMEM AnalogMenuInfo minfoUTCOffset = { "UTC Offset", 82, 302, 48, NO_CALLBACK, -24, 1, "h" };
-AnalogMenuItem menuUTCOffset(&minfoUTCOffset, 0, &menuClearSettings);
 const PROGMEM BooleanMenuInfo minfobtn8Up = { "Up", 76, 203, 1, NO_CALLBACK, NAMING_YES_NO };
 BooleanMenuItem menubtn8Up(&minfobtn8Up, false, NULL);
 const PROGMEM BooleanMenuInfo minfobtn8Down = { "Down", 75, 202, 1, NO_CALLBACK, NAMING_YES_NO };
@@ -203,7 +201,7 @@ SubMenuItem menuButton1(&minfoButton1, &menuBackButton1, &menuButton2);
 RENDERING_CALLBACK_NAME_INVOKE(fnButtonsRtCall, backSubItemRenderFn, "Buttons", -1, NO_CALLBACK)
 const PROGMEM SubMenuInfo minfoButtons = { "Buttons", 1, 0xffff, 0, NO_CALLBACK };
 BackMenuItem menuBackButtons(fnButtonsRtCall, &menuButton1);
-SubMenuItem menuButtons(&minfoButtons, &menuBackButtons, &menuUTCOffset);
+SubMenuItem menuButtons(&minfoButtons, &menuBackButtons, &menuClearSettings);
 
 void setupMenu() {
     // First we set up eeprom and authentication (if needed).

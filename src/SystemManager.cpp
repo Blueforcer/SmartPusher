@@ -14,10 +14,16 @@ const long interval = 1000;
 const char *Pushtype;
 
 const int FW_VERSION = 0001;
-const char* fwUrlBase = "http://blueforcer.de/fota/";
+const char *fwUrlBase = "http://blueforcer.de/fota/";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
+const unsigned long updateDelay = 900000; // update time every 15 min
+const unsigned long retryDelay = 5000;    // retry 5 sec later if time query failed
+const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+unsigned long lastUpdatedTime = updateDelay * -1;
+unsigned int second_prev = 0;
+bool colon_switch = true;
 
 TitleWidget wifiWidget(iconsWifi, 5, 16, 12);
 
@@ -35,11 +41,14 @@ SystemManager_ &SystemManager = SystemManager.getInstance();
 
 void startWiFi()
 {
-    // scanNetworks();
+    gfx.clearBuffer();
     Serial.println("Connecting to Wifi ");
     WiFi.begin(SSID, password);
     WiFi.mode(WIFI_STA);
-
+    gfx.setFont(u8g2_font_pcsenior_8f);
+    gfx.drawStr(0, 10, "Connecting");
+    gfx.drawStr(0, 20, "  to WiFi...");
+    gfx.sendBuffer();
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(250);
@@ -47,6 +56,34 @@ void startWiFi()
     }
     Serial.println("Connected to the WiFi network");
     Serial.println(WiFi.localIP());
+    gfx.clearBuffer();
+}
+
+unsigned int getYear()
+{
+    time_t rawtime = timeClient.getEpochTime();
+    struct tm *ti;
+    ti = localtime(&rawtime);
+    unsigned int year = ti->tm_year + 1900;
+    return year;
+}
+
+unsigned int getMonth()
+{
+    time_t rawtime = timeClient.getEpochTime();
+    struct tm *ti;
+    ti = localtime(&rawtime);
+    unsigned int month = ti->tm_mon + 1;
+    return month;
+}
+
+unsigned int getDate()
+{
+    time_t rawtime = timeClient.getEpochTime();
+    struct tm *ti;
+    ti = localtime(&rawtime);
+    unsigned int month = ti->tm_mday;
+    return month;
 }
 
 void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
@@ -57,15 +94,33 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
         // save the last time you blinked the LED
         gfx.clearBuffer();
         previousMillis = currentMillis;
-       
-        gfx.setFont(u8g2_font_timB24_tr);
-        gfx.drawStr(8, 45, timeClient.getFormattedTime().c_str());
 
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            gfx.setFont(u8g2_font_5x8_tf);
-            gfx.drawStr(22, 62, "please check WiFi");
-        }
+        unsigned long t = millis();
+
+        unsigned int year = getYear();
+        unsigned int month = getMonth();
+        unsigned int day = getDate();
+        unsigned int hour = timeClient.getHours();
+        unsigned int minute = timeClient.getMinutes();
+        unsigned int second = timeClient.getSeconds();
+        String weekDay = weekDays[timeClient.getDay()];
+
+        if (second != second_prev && Colonblink)
+            colon_switch = !colon_switch;
+
+        String fYear = String(year);
+        String fDate = (day < 10 ? "0" : "") + String(day) + "/" + (month < 10 ? "0" : "") + String(month);
+        String fTime = (hour < 10 ? "0" : "") + String(hour) + (colon_switch ? ":" : " ") + (minute < 10 ? "0" : "") + String(minute);
+
+        gfx.setFont(u8g2_font_inr16_mf);
+        gfx.drawStr(0, 16, strcpy(new char[fDate.length() + 1], fDate.c_str()));
+        gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
+        gfx.drawStr(93, 8, strcpy(new char[fYear.length() + 1], fYear.c_str()));
+        gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
+        gfx.drawStr(93, 17, strcpy(new char[weekDay.length() + 1], weekDay.c_str()));
+        gfx.setFont(u8g2_font_inb30_mn);
+        gfx.drawStr(2, 58, strcpy(new char[fTime.length() + 1], fTime.c_str()));
+
         gfx.sendBuffer();
     }
 }
@@ -132,9 +187,12 @@ void SystemManager_::setup()
     gfx.drawStr(5, 55, "all purpose button array");
     gfx.sendBuffer();
     menuMgr.load(*eeprom);
+
+    delay(1000);
+
     startWiFi();
     // menuIoTMonitor.registerCommsNotification(onCommsChange);
-    delay(1000);
+
     taskManager.scheduleFixedRate(1000, []
                                   {
         if(WiFi.status() == WL_CONNECTED) {
@@ -143,9 +201,10 @@ void SystemManager_::setup()
         else {
             wifiWidget.setCurrentState(0);
         } });
+        
     timeClient.begin();
     renderer.takeOverDisplay(renderTitleScreen);
-    timeClient.setTimeOffset(menuUTCOffset.getCurrentValue() * 3600);
+    timeClient.setTimeOffset(UTCoffset * 3600);
     timeClient.update();
 }
 

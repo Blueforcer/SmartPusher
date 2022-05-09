@@ -32,7 +32,6 @@ extern EspAsyncWebserver webServer;
 extern ActionMenuItem menuExit;
 extern ActionMenuItem menuSaveAll;
 extern ActionMenuItem menuClearSettings;
-extern AnalogMenuItem menuUTCOffset;
 extern BooleanMenuItem menubtn8Up;
 extern BooleanMenuItem menubtn8Down;
 extern BooleanMenuItem menubtn8DoubleClick;
