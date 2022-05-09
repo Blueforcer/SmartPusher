@@ -181,14 +181,12 @@ void SystemManager_::setup()
                                renderer.takeOverDisplay(renderTitleScreen); });
     setupMenu();
     gfx.clearBuffer();
-    gfx.setFont(u8g2_font_timB24_tr);
-    gfx.drawStr(20, 40, "APBA");
-    gfx.setFont(u8g2_font_5x8_tf);
-    gfx.drawStr(5, 55, "all purpose button array");
+    gfx.setFont(u8g2_font_tenfatguys_tr);
+    gfx.drawStr(3,35,"SmartPusher");
     gfx.sendBuffer();
     menuMgr.load(*eeprom);
 
-    delay(1000);
+    delay(2000);
 
     startWiFi();
     // menuIoTMonitor.registerCommsNotification(onCommsChange);

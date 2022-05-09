@@ -4,6 +4,6 @@
 #define MQTTport 1883
 #define MQTTuser "netplus"
 #define MQTTpass "netpluscore"
-#define MQTTprefix "APBA"
+#define MQTTprefix "SmartPusher"
 #define Colonblink true
 #define UTCoffset 2
