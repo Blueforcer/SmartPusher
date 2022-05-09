@@ -31,11 +31,11 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     if ((char)payload[0] == '1')
     {
-        ButtonManager.setButtonState(0,true);
+        ButtonManager.setButtonState(0, true);
     }
     else
     {
-       ButtonManager.setButtonState(0,false);
+        ButtonManager.setButtonState(0, false);
     }
 }
 
@@ -45,9 +45,6 @@ boolean reconnect()
 {
     if (client.connect(MQTTprefix, MQTTuser, MQTTpass))
     {
-        // Once connected, publish an announcement...
-        client.publish(MQTTprefix, "Ready for push");
-        // ... and resubscribe
         client.subscribe(MQTTprefix);
     }
     return client.connected();

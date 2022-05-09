@@ -257,14 +257,13 @@ void ButtonManager_::handleReleased(uint8_t btn)
     }
 }
 
-void ButtonManager_::SendState(String type, int btn)
+void ButtonManager_::SendState(String type, uint8_t btn)
 {
     String json;
     StaticJsonDocument<200> doc;
-    doc["type"] = type;
-    doc["button"] = btn;
+    doc["event"] = type;
     serializeJsonPretty(doc, json);
-    MqttManager.publish("Button" + btn, json.c_str());
+    MqttManager.publish(String(btn+1).c_str(), json.c_str());
     // uint32_t length = json.length();
     // Serial.printf("%c%c%c%c%s", (length & 0xFF000000) >> 24, (length & 0x00FF0000) >> 16, (length & 0x0000FF00) >> 8, (length & 0x000000FF), json.c_str());
 }

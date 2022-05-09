@@ -15,11 +15,8 @@ const char *Pushtype;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
-const unsigned long updateDelay = 900000; // update time every 15 min
-const unsigned long retryDelay = 5000;    // retry 5 sec later if time query failed
+
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-unsigned long lastUpdatedTime = updateDelay * -1;
-unsigned int second_prev = 0;
 bool colon_switch = true;
 
 TitleWidget wifiWidget(iconsWifi, 5, 16, 12);
@@ -83,7 +80,7 @@ unsigned int getDate()
     return month;
 }
 
-void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
+void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
 {
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval)
@@ -97,17 +94,16 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
         unsigned int day = getDate();
         unsigned int hour = timeClient.getHours();
         unsigned int minute = timeClient.getMinutes();
-        unsigned int second = timeClient.getSeconds();
         String weekDay = weekDays[timeClient.getDay()];
 
-        if (second != second_prev && Colonblink)
+        if (Colonblink)
             colon_switch = !colon_switch;
 
         String fYear = String(year);
         String fDate = (day < 10 ? "0" : "") + String(day) + "/" + (month < 10 ? "0" : "") + String(month);
         String fTime = (hour < 10 ? "0" : "") + String(hour) + (colon_switch ? ":" : " ") + (minute < 10 ? "0" : "") + String(minute);
 
-        gfx.setFont(u8g2_font_inr16_mf);
+        gfx.setFont(u8g2_font_tenfatguys_tr);
         gfx.drawStr(0, 16, strcpy(new char[fDate.length() + 1], fDate.c_str()));
         gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
         gfx.drawStr(93, 8, strcpy(new char[fYear.length() + 1], fYear.c_str()));
@@ -133,18 +129,18 @@ void renderButtonScreen(unsigned int encoderValue, RenderPressMode clicked)
     if (currentMillis - previousMillis >= interval)
     {
         previousMillis = currentMillis;
-        renderer.takeOverDisplay(renderTitleScreen);
+        renderer.takeOverDisplay(renderTimeScreen);
     }
 }
 
 void CALLBACK_FUNCTION onTakeOverDisplay(int /*id*/)
 {
-    renderer.takeOverDisplay(renderTitleScreen);
+    renderer.takeOverDisplay(renderTimeScreen);
 }
 
 void SystemManager_::ShowTitleScreen()
 {
-    renderer.takeOverDisplay(renderTitleScreen);
+    renderer.takeOverDisplay(renderTimeScreen);
 }
 
 void SystemManager_::ShowButtonScreen(const char *type)
@@ -173,7 +169,7 @@ void SystemManager_::setup()
     renderer.setFirstWidget(&wifiWidget);
     renderer.setResetCallback([]
                               {ButtonManager.LeaveMenuState();
-                               renderer.takeOverDisplay(renderTitleScreen); });
+                               renderer.takeOverDisplay(renderTimeScreen); });
     setupMenu();
     gfx.clearBuffer();
     gfx.setFont(u8g2_font_tenfatguys_tr);
@@ -197,7 +193,7 @@ void SystemManager_::setup()
     timeClient.begin();
     timeClient.setTimeOffset(UTCoffset * 3600);
     timeClient.update();
-    renderer.takeOverDisplay(renderTitleScreen);
+    renderer.takeOverDisplay(renderTimeScreen);
 }
 
 void SystemManager_::tick()
@@ -238,9 +234,7 @@ void CALLBACK_FUNCTION onSaveAll(int id)
 {
     Serial.println("Saving values to EEPROM");
     menuMgr.save();
-    // on esp you must commit after calling save.
     EEPROM.commit();
-
     BaseDialog *dlg = renderer.getDialog();
     if (dlg)
     {
@@ -252,7 +246,7 @@ void CALLBACK_FUNCTION onSaveAll(int id)
 void CALLBACK_FUNCTION onExit(int id)
 {
     ButtonManager.LeaveMenuState();
-    renderer.takeOverDisplay(renderTitleScreen);
+    renderer.takeOverDisplay(renderTimeScreen);
 }
 
 void CALLBACK_FUNCTION Light(int id)

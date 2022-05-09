@@ -25,7 +25,7 @@ private:
     // The button references themselves
     vector<AceButton *> buttons;
 
-    void SendState(String type, int btn);
+    void SendState(String type, uint8_t btn);
     uint8_t getButtonIndex(uint8_t);
 
     // This method is the class-internal event handler with access to the instance state
