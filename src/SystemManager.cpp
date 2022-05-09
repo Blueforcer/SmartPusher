@@ -13,9 +13,6 @@ unsigned long previousMillis = 0;
 const long interval = 1000;
 const char *Pushtype;
 
-const int FW_VERSION = 0001;
-const char *fwUrlBase = "http://blueforcer.de/fota/";
-
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 const unsigned long updateDelay = 900000; // update time every 15 min
@@ -95,8 +92,6 @@ void renderTitleScreen(unsigned int encoderValue, RenderPressMode clicked)
         gfx.clearBuffer();
         previousMillis = currentMillis;
 
-        unsigned long t = millis();
-
         unsigned int year = getYear();
         unsigned int month = getMonth();
         unsigned int day = getDate();
@@ -130,7 +125,7 @@ void renderButtonScreen(unsigned int encoderValue, RenderPressMode clicked)
     unsigned long currentMillis = millis();
     gfx.clearBuffer();
 
-    gfx.setFont(u8g2_font_timB24_tr);
+    gfx.setFont(u8g2_font_inb24_mr);
     gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(Pushtype)) / 2, 45, Pushtype);
 
     gfx.sendBuffer();
@@ -161,7 +156,7 @@ void SystemManager_::ShowButtonScreen(const char *type)
 void SystemManager_::EnterMenu()
 {
     gfx.clearBuffer();
-    gfx.setFont(u8g2_font_timB24_tr);
+    gfx.setFont(u8g2_font_tenfatguys_tr);
     gfx.drawStr(20, 45, "MENU");
     gfx.sendBuffer();
     delay(1000);
@@ -189,7 +184,6 @@ void SystemManager_::setup()
     delay(2000);
 
     startWiFi();
-    // menuIoTMonitor.registerCommsNotification(onCommsChange);
 
     taskManager.scheduleFixedRate(1000, []
                                   {
@@ -201,9 +195,9 @@ void SystemManager_::setup()
         } });
         
     timeClient.begin();
-    renderer.takeOverDisplay(renderTitleScreen);
     timeClient.setTimeOffset(UTCoffset * 3600);
     timeClient.update();
+    renderer.takeOverDisplay(renderTitleScreen);
 }
 
 void SystemManager_::tick()
