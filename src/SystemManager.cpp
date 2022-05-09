@@ -103,7 +103,7 @@ void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
         String fDate = (day < 10 ? "0" : "") + String(day) + "/" + (month < 10 ? "0" : "") + String(month);
         String fTime = (hour < 10 ? "0" : "") + String(hour) + (colon_switch ? ":" : " ") + (minute < 10 ? "0" : "") + String(minute);
 
-        gfx.setFont(u8g2_font_tenfatguys_tr);
+        gfx.setFont(u8g2_font_inr16_mf);
         gfx.drawStr(0, 16, strcpy(new char[fDate.length() + 1], fDate.c_str()));
         gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
         gfx.drawStr(93, 8, strcpy(new char[fYear.length() + 1], fYear.c_str()));
