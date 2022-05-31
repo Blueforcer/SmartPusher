@@ -1,9 +1,9 @@
-#define SSID "Kindergarten"
-#define password "53825382"
-#define MQTThost "blueforcer.de"
+#define SSID ""
+#define password ""
+#define MQTThost ""
 #define MQTTport 1883
-#define MQTTuser "netplus"
-#define MQTTpass "netpluscore"
+#define MQTTuser ""
+#define MQTTpass ""
 #define MQTTprefix "SmartPusher"
 #define Colonblink true
 #define UTCoffset 2
