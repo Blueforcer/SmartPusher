@@ -10,7 +10,9 @@
 #include <config.h>
 
 unsigned long previousMillis = 0;
-const long interval = 1000;
+const long CLOCK_INTERVAL = 1000;
+const long CHECK_WIFI_TIME = 10000;
+unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
 
 WiFiUDP ntpUDP;
@@ -48,7 +50,8 @@ void startWiFi()
         delay(250);
         Serial.print(".");
     }
-    Serial.println("Connected to the WiFi network");
+    Serial.println();
+    Serial.println("Connected to WiFi");
     Serial.println(WiFi.localIP());
     gfx.clearBuffer();
 }
@@ -83,7 +86,7 @@ unsigned int getDate()
 void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
 {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= interval)
+    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         // save the last time you blinked the LED
         gfx.clearBuffer();
@@ -126,7 +129,7 @@ void renderButtonScreen(unsigned int encoderValue, RenderPressMode clicked)
 
     gfx.sendBuffer();
 
-    if (currentMillis - previousMillis >= interval)
+    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         previousMillis = currentMillis;
         renderer.takeOverDisplay(renderTimeScreen);
@@ -173,7 +176,7 @@ void SystemManager_::setup()
     setupMenu();
     gfx.clearBuffer();
     gfx.setFont(u8g2_font_tenfatguys_tr);
-    gfx.drawStr(3,35,"SmartPusher");
+    gfx.drawStr(3, 35, "SmartPusher");
     gfx.sendBuffer();
     menuMgr.load(*eeprom);
 
@@ -189,7 +192,16 @@ void SystemManager_::setup()
         else {
             wifiWidget.setCurrentState(0);
         } });
-        
+
+    taskManager.scheduleFixedRate(10000, []
+                                  {
+        if ((WiFi.status() != WL_CONNECTED))
+    {
+        Serial.println("Reconnecting to WiFi...");
+        WiFi.disconnect();
+        WiFi.reconnect();
+    } });
+
     timeClient.begin();
     timeClient.setTimeOffset(UTCoffset * 3600);
     timeClient.update();
@@ -199,6 +211,13 @@ void SystemManager_::setup()
 void SystemManager_::tick()
 {
     taskManager.runLoop();
+}
+
+void SystemManager_::setBrightness(uint8_t val)
+{
+    gfx.setContrast(val);
+    gfx.setPowerSave(val == 0);
+    ButtonManager.setBrightness(val);
 }
 
 void onClearFinished(ButtonType btnPressed, void * /*userdata*/)

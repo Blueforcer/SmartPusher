@@ -8,6 +8,10 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+byte *buffer;
+boolean Rflag = false;
+int r_len;
+
 // The getter for the instantiated singleton instance
 MqttManager_ &MqttManager_::getInstance()
 {
@@ -20,22 +24,14 @@ MqttManager_ &MqttManager = MqttManager.getInstance();
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-    Serial.print("Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
-    for (int i = 0; i < length; i++)
+    payload[length] = '\0';
+    String strTopic = String(topic);
+    String strPayload = String((char *)payload);
+    Serial.println(strTopic);
+    Serial.println(strPayload);
+    if (strTopic == MQTTprefix + String("/brightness"))
     {
-        Serial.print((char)payload[i]);
-    }
-    Serial.println();
-
-    if ((char)payload[0] == '1')
-    {
-        ButtonManager.setButtonState(0, true);
-    }
-    else
-    {
-        ButtonManager.setButtonState(0, false);
+        SystemManager.setBrightness(atoi(strPayload.c_str()));
     }
 }
 
@@ -45,8 +41,10 @@ boolean reconnect()
 {
     if (client.connect(MQTTprefix, MQTTuser, MQTTpass))
     {
-        client.subscribe(MQTTprefix);
+        client.subscribe((MQTTprefix + String("/brightness")).c_str());
+        Serial.println("MQTT Connected");
     }
+
     return client.connected();
 }
 
@@ -60,24 +58,27 @@ void MqttManager_::setup()
 void MqttManager_::tick()
 {
     // if (menuInternalBroker.isActive()) broker.loop();
-
-    if (!client.connected())
+    if (WiFi.isConnected())
     {
-        long now = millis();
-        if (now - lastReconnectAttempt > 5000)
+        if (!client.connected())
         {
-            lastReconnectAttempt = now;
-            // Attempt to reconnect
-            if (reconnect())
+            long now = millis();
+            if (now - lastReconnectAttempt > 5000)
             {
-                lastReconnectAttempt = 0;
+                lastReconnectAttempt = now;
+                Serial.println("Attempt to connect to MQTT");
+                // Attempt to reconnect
+                if (reconnect())
+                {
+                    lastReconnectAttempt = 0;
+                }
             }
         }
-    }
-    else
-    {
-        // Client connected
-        client.loop();
+        else
+        {
+            // Client connected
+            client.loop();
+        }
     }
 }
 

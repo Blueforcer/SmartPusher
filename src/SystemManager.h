@@ -7,17 +7,18 @@
 
 class SystemManager_
 {
-    private:
-        SystemManager_() = default;
-     
-    public:
-        static SystemManager_ &getInstance();
+private:
+    SystemManager_() = default;
 
-        void setup();
-        void tick();
-        void EnterMenu();
-        void ShowTitleScreen();
-        void ShowButtonScreen(const char* type);
+public:
+    static SystemManager_ &getInstance();
+
+    void setup();
+    void tick();
+    void EnterMenu();
+    void ShowTitleScreen();
+    void ShowButtonScreen(const char *type);
+    void setBrightness(uint8_t val);
 };
 
 extern SystemManager_ &SystemManager;
