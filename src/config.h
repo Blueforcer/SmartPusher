@@ -1,9 +1,0 @@
-#define SSID ""
-#define password ""
-#define MQTThost ""
-#define MQTTport 1883
-#define MQTTuser ""
-#define MQTTpass ""
-#define MQTTprefix "SmartPusher"
-#define Colonblink true
-#define UTCoffset 2
