@@ -4,19 +4,16 @@
 #include <SPI.h>
 #include <WiFi.h>
 #include "stockIcons/wifiAndConnectionIcons16x12.h"
-#include <WiFiUdp.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
 #include <config.h>
+
+const int daylightOffset_sec = 3600;
+tm timeinfo;
 
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
 const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
-
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
 
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 bool colon_switch = true;
@@ -39,7 +36,7 @@ void startWiFi()
 {
     gfx.clearBuffer();
     Serial.println("Connecting to Wifi ");
-    WiFi.begin(SSID, password);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
     WiFi.mode(WIFI_STA);
     gfx.setFont(u8g2_font_pcsenior_8f);
     gfx.drawStr(0, 10, "Connecting");
@@ -56,32 +53,6 @@ void startWiFi()
     gfx.clearBuffer();
 }
 
-unsigned int getYear()
-{
-    time_t rawtime = timeClient.getEpochTime();
-    struct tm *ti;
-    ti = localtime(&rawtime);
-    unsigned int year = ti->tm_year + 1900;
-    return year;
-}
-
-unsigned int getMonth()
-{
-    time_t rawtime = timeClient.getEpochTime();
-    struct tm *ti;
-    ti = localtime(&rawtime);
-    unsigned int month = ti->tm_mon + 1;
-    return month;
-}
-
-unsigned int getDate()
-{
-    time_t rawtime = timeClient.getEpochTime();
-    struct tm *ti;
-    ti = localtime(&rawtime);
-    unsigned int month = ti->tm_mday;
-    return month;
-}
 
 void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
 {
@@ -92,14 +63,22 @@ void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
         gfx.clearBuffer();
         previousMillis = currentMillis;
 
-        unsigned int year = getYear();
-        unsigned int month = getMonth();
-        unsigned int day = getDate();
-        unsigned int hour = timeClient.getHours();
-        unsigned int minute = timeClient.getMinutes();
-        String weekDay = weekDays[timeClient.getDay()];
+        
 
-        if (Colonblink)
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("Failed to obtain time");
+            return;
+        }
+
+        unsigned int year = 1900 + timeinfo.tm_year;
+        unsigned int month = timeinfo.tm_mon + 1;
+        unsigned int day = timeinfo.tm_mday;
+        unsigned int hour = timeinfo.tm_hour;
+        unsigned int minute = timeinfo.tm_min;
+        String weekDay = weekDays[timeinfo.tm_wday];
+
+        if (COLON_BLINK)
             colon_switch = !colon_switch;
 
         String fYear = String(year);
@@ -202,9 +181,7 @@ void SystemManager_::setup()
         WiFi.reconnect();
     } });
 
-    timeClient.begin();
-    timeClient.setTimeOffset(UTCoffset * 3600);
-    timeClient.update();
+    configTzTime(TIMEZONE, NTP_SERVER);
     renderer.takeOverDisplay(renderTimeScreen);
 }
 

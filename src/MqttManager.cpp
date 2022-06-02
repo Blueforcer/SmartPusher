@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <config.h>
 
+
 //#include "TinyMqtt.h"
 
 // MqttBroker broker(PORT);
@@ -29,7 +30,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     String strPayload = String((char *)payload);
     Serial.println(strTopic);
     Serial.println(strPayload);
-    if (strTopic == MQTTprefix + String("/brightness"))
+    if (strTopic == MQTT_PREFIX + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
     }
@@ -39,9 +40,9 @@ long lastReconnectAttempt = 0;
 
 boolean reconnect()
 {
-    if (client.connect(MQTTprefix, MQTTuser, MQTTpass))
+    if (client.connect(MQTT_PREFIX, MQTT_USER, MQTT_PASS))
     {
-        client.subscribe((MQTTprefix + String("/brightness")).c_str());
+        client.subscribe((MQTT_PREFIX + String("/brightness")).c_str());
         Serial.println("MQTT Connected");
     }
 
@@ -50,7 +51,7 @@ boolean reconnect()
 
 void MqttManager_::setup()
 {
-    client.setServer(MQTThost, MQTTport);
+    client.setServer(MQTT_HOST, MQTT_PORT);
     client.setCallback(callback);
     lastReconnectAttempt = 0;
 }
@@ -85,7 +86,7 @@ void MqttManager_::tick()
 void MqttManager_::publish(const char *topic, const char *payload)
 {
     char result[100]; // array to hold the result.
-    strcpy(result, MQTTprefix);
+    strcpy(result, MQTT_PREFIX);
     strcat(result, "/");   // copy string one into the result.
     strcat(result, topic); // append string two to the result.
     client.publish(result, payload);
