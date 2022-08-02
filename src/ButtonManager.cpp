@@ -6,8 +6,8 @@
 BooleanMenuItem *ClickItems[]{&menubtn1Click, &menubtn2Click, &menubtn3Click, &menubtn4Click, &menubtn5Click, &menubtn6Click, &menubtn7Click, &menubtn8Click};
 BooleanMenuItem *LongClickItems[]{&menubtn1LongClick, &menubtn2LongClick, &menubtn3LongClick, &menubtn4LongClick, &menubtn5LongClick, &menubtn6LongClick, &menubtn7LongClick, &menubtn8LongClick};
 BooleanMenuItem *DoubleClickItems[]{&menubtn1DoubleClick, &menubtn2DoubleClick, &menubtn3DoubleClick, &menubtn4DoubleClick, &menubtn5DoubleClick, &menubtn6DoubleClick, &menubtn7DoubleClick, &menubtn8DoubleClick};
-BooleanMenuItem *DownItems[]{&menubtn1Down, &menubtn2Down, &menubtn3Down, &menubtn4Down, &menubtn5Down, &menubtn6Down, &menubtn7Down, &menubtn8Down};
-BooleanMenuItem *UpItems[]{&menubtn1Up, &menubtn2Up, &menubtn3Up, &menubtn4Up, &menubtn5Up, &menubtn6Up, &menubtn7Up, &menubtn8Up};
+BooleanMenuItem *PushItems[]{&menubtn1Push, &menubtn2Push, &menubtn3Push, &menubtn4Push, &menubtn5Push, &menubtn6Push, &menubtn7Push, &menubtn8Push};
+
 
 bool MenuEntered = false;
 bool ResetLights = false;
@@ -247,7 +247,7 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 
 void ButtonManager_::handlePressed(uint8_t btn)
 {
-    if (DownItems[btn]->getBoolean() && !MenuEntered)
+    if (PushItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Down");
         ShowAnimation(4, btn);
@@ -258,7 +258,7 @@ void ButtonManager_::handlePressed(uint8_t btn)
 void ButtonManager_::handleReleased(uint8_t btn)
 {
     longPressed[btn] = false;
-    if (UpItems[btn]->getBoolean() && !MenuEntered)
+    if (PushItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Up");
         ShowAnimation(5, btn);

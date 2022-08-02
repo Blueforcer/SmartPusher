@@ -46,13 +46,12 @@ boolean reconnect()
         Serial.println("MQTT Connected");
 
         for (int i = 1; i < 9; i++)
-    {
-        MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
-    }
-       
+        {
+            MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
+        }
     }
 
     return client.connected();

@@ -98,24 +98,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn1Down",
+        "name": "Push",
+        "variableName": "btn1Push",
         "id": 33,
         "eepromAddress": 172,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 14,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn1Up",
-        "id": 34,
-        "eepromAddress": 173,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -202,24 +188,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn2Down",
+        "name": "Push",
+        "variableName": "btn2Push",
         "id": 39,
         "eepromAddress": 106,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 35,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn2Up",
-        "id": 40,
-        "eepromAddress": 107,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -306,24 +278,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn3Down",
+        "name": "Push",
+        "variableName": "btn3Push",
         "id": 45,
         "eepromAddress": 177,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 41,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn3Up",
-        "id": 46,
-        "eepromAddress": 178,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -410,24 +368,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn4Down",
+        "name": "Push",
+        "variableName": "btn4Push",
         "id": 51,
         "eepromAddress": 182,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 47,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn4Up",
-        "id": 52,
-        "eepromAddress": 183,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -514,24 +458,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn5Down",
+        "name": "Push",
+        "variableName": "btn5Push",
         "id": 57,
         "eepromAddress": 187,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 53,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn5Up",
-        "id": 58,
-        "eepromAddress": 188,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -618,24 +548,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn6Down",
+        "name": "Push",
+        "variableName": "btn6Push",
         "id": 63,
         "eepromAddress": 192,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 59,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn6Up",
-        "id": 64,
-        "eepromAddress": 193,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -722,24 +638,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn7Down",
+        "name": "Push",
+        "variableName": "btn7Push",
         "id": 69,
         "eepromAddress": 197,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 65,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn7Up",
-        "id": 70,
-        "eepromAddress": 198,
         "readOnly": false,
         "localOnly": false,
         "visible": true
@@ -826,24 +728,10 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Down",
-        "variableName": "btn8Down",
+        "name": "Push",
+        "variableName": "btn8Push",
         "id": 75,
         "eepromAddress": 202,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 71,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Up",
-        "variableName": "btn8Up",
-        "id": 76,
-        "eepromAddress": 203,
         "readOnly": false,
         "localOnly": false,
         "visible": true
