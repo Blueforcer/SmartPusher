@@ -38,9 +38,9 @@ void startWiFi()
     Serial.println("Connecting to Wifi ");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     WiFi.mode(WIFI_STA);
-    gfx.setFont(u8g2_font_pcsenior_8f);
-    gfx.drawStr(0, 10, "Connecting");
-    gfx.drawStr(0, 20, "  to WiFi...");
+    gfx.setFont(u8g2_font_tenfatguys_tr);
+    gfx.drawStr(10, 10, "Connecting");
+    gfx.drawStr(10, 30, "to WiFi...");
     gfx.sendBuffer();
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -51,19 +51,20 @@ void startWiFi()
     Serial.println("Connected to WiFi");
     Serial.println(WiFi.localIP());
     gfx.clearBuffer();
+    gfx.drawStr(15, 30, "Connected!");
+    gfx.sendBuffer();
+    delay(1000);
 }
-
 
 void renderTimeScreen(unsigned int encoderValue, RenderPressMode clicked)
 {
+
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         // save the last time you blinked the LED
         gfx.clearBuffer();
         previousMillis = currentMillis;
-
-        
 
         if (!getLocalTime(&timeinfo))
         {
@@ -111,17 +112,20 @@ void renderButtonScreen(unsigned int encoderValue, RenderPressMode clicked)
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         previousMillis = currentMillis;
+        gfx.setColorIndex(1);
         renderer.takeOverDisplay(renderTimeScreen);
     }
 }
 
 void CALLBACK_FUNCTION onTakeOverDisplay(int /*id*/)
 {
+    gfx.setColorIndex(1);
     renderer.takeOverDisplay(renderTimeScreen);
 }
 
 void SystemManager_::ShowTitleScreen()
 {
+    gfx.setColorIndex(1);
     renderer.takeOverDisplay(renderTimeScreen);
 }
 
@@ -134,7 +138,7 @@ void SystemManager_::ShowButtonScreen(const char *type)
 void SystemManager_::EnterMenu()
 {
     gfx.clearBuffer();
-    gfx.setFont(u8g2_font_tenfatguys_tr);
+    gfx.setFont(u8g2_font_tenfatguys_tn);
     gfx.drawStr(20, 45, "MENU");
     gfx.sendBuffer();
     delay(1000);
@@ -151,6 +155,7 @@ void SystemManager_::setup()
     renderer.setFirstWidget(&wifiWidget);
     renderer.setResetCallback([]
                               {ButtonManager.LeaveMenuState();
+                                gfx.setColorIndex(1);
                                renderer.takeOverDisplay(renderTimeScreen); });
     setupMenu();
     gfx.clearBuffer();
@@ -182,6 +187,7 @@ void SystemManager_::setup()
     } });
 
     configTzTime(TIMEZONE, NTP_SERVER);
+    gfx.setColorIndex(1);
     renderer.takeOverDisplay(renderTimeScreen);
 }
 

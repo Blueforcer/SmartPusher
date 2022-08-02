@@ -3,11 +3,7 @@
 #include <ArduinoJson.h>
 #include "SwitchInput.h"
 
-BooleanMenuItem *ClickItems[]{&menubtn1Click, &menubtn2Click, &menubtn3Click, &menubtn4Click, &menubtn5Click, &menubtn6Click, &menubtn7Click, &menubtn8Click};
-BooleanMenuItem *LongClickItems[]{&menubtn1LongClick, &menubtn2LongClick, &menubtn3LongClick, &menubtn4LongClick, &menubtn5LongClick, &menubtn6LongClick, &menubtn7LongClick, &menubtn8LongClick};
-BooleanMenuItem *DoubleClickItems[]{&menubtn1DoubleClick, &menubtn2DoubleClick, &menubtn3DoubleClick, &menubtn4DoubleClick, &menubtn5DoubleClick, &menubtn6DoubleClick, &menubtn7DoubleClick, &menubtn8DoubleClick};
 BooleanMenuItem *PushItems[]{&menubtn1Push, &menubtn2Push, &menubtn3Push, &menubtn4Push, &menubtn5Push, &menubtn6Push, &menubtn7Push, &menubtn8Push};
-
 
 bool MenuEntered = false;
 bool ResetLights = false;
@@ -211,7 +207,7 @@ void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 
 void ButtonManager_::handleSingleClick(uint8_t btn)
 {
-    if (ClickItems[btn]->getBoolean() && !MenuEntered)
+    if (!PushItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Click");
 
@@ -222,7 +218,7 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 
 void ButtonManager_::handleDoubleClick(uint8_t btn)
 {
-    if (DoubleClickItems[btn]->getBoolean() && !MenuEntered)
+    if (!PushItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Double");
 
@@ -237,7 +233,7 @@ void ButtonManager_::handleLongClick(uint8_t btn)
     longPressed[btn] = true;
     if (!MenuEntered)
         CheckMenu();
-    if (LongClickItems[btn]->getBoolean() && !MenuEntered)
+    if (!PushItems[btn]->getBoolean() && !MenuEntered)
     {
         SystemManager.ShowButtonScreen("Long");
         ShowAnimation(3, btn);
@@ -291,7 +287,7 @@ void ButtonManager_::SendState(int type, uint8_t btn)
 
     if (type != 4 || type != 5)
     {
-        delay(500);
+        delay(50);
         switch (type)
         {
         case 1:

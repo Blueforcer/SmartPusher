@@ -56,49 +56,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn1Click",
-        "id": 30,
-        "eepromAddress": 169,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 14,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn1LongClick",
-        "id": 31,
-        "eepromAddress": 171,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 14,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn1DoubleClick",
-        "id": 32,
-        "eepromAddress": 170,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 14,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn1Push",
         "id": 33,
         "eepromAddress": 172,
@@ -146,49 +104,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn2Click",
-        "id": 36,
-        "eepromAddress": 103,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 35,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn2LongClick",
-        "id": 37,
-        "eepromAddress": 104,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 35,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn2DoubleClick",
-        "id": 38,
-        "eepromAddress": 105,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 35,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn2Push",
         "id": 39,
         "eepromAddress": 106,
@@ -236,49 +152,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn3Click",
-        "id": 42,
-        "eepromAddress": 174,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 41,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn3LongClick",
-        "id": 43,
-        "eepromAddress": 175,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 41,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn3DoubleClick",
-        "id": 44,
-        "eepromAddress": 176,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 41,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn3Push",
         "id": 45,
         "eepromAddress": 177,
@@ -326,49 +200,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn4Click",
-        "id": 48,
-        "eepromAddress": 179,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 47,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn4LongClick",
-        "id": 49,
-        "eepromAddress": 180,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 47,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn4DoubleClick",
-        "id": 50,
-        "eepromAddress": 181,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 47,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn4Push",
         "id": 51,
         "eepromAddress": 182,
@@ -416,49 +248,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn5Click",
-        "id": 54,
-        "eepromAddress": 184,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 53,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn5LongClick",
-        "id": 55,
-        "eepromAddress": 185,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 53,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn5DoubleClick",
-        "id": 56,
-        "eepromAddress": 186,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 53,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn5Push",
         "id": 57,
         "eepromAddress": 187,
@@ -506,49 +296,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn6Click",
-        "id": 60,
-        "eepromAddress": 189,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 59,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn6LongClick",
-        "id": 61,
-        "eepromAddress": 190,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 59,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn6DoubleClick",
-        "id": 62,
-        "eepromAddress": 191,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 59,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn6Push",
         "id": 63,
         "eepromAddress": 192,
@@ -596,49 +344,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn7Click",
-        "id": 66,
-        "eepromAddress": 194,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 65,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn7LongClick",
-        "id": 67,
-        "eepromAddress": 195,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 65,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn7DoubleClick",
-        "id": 68,
-        "eepromAddress": 196,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 65,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn7Push",
         "id": 69,
         "eepromAddress": 197,
@@ -686,49 +392,7 @@
       "type": "boolItem",
       "item": {
         "naming": "YES_NO",
-        "name": "Click",
-        "variableName": "btn8Click",
-        "id": 72,
-        "eepromAddress": 199,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 71,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Long click",
-        "variableName": "btn8LongClick",
-        "id": 73,
-        "eepromAddress": 200,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 71,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Doubleclick",
-        "variableName": "btn8DoubleClick",
-        "id": 74,
-        "eepromAddress": 201,
-        "readOnly": false,
-        "localOnly": false,
-        "visible": true
-      }
-    },
-    {
-      "parentId": 71,
-      "type": "boolItem",
-      "item": {
-        "naming": "YES_NO",
-        "name": "Push",
+        "name": "Pushmode",
         "variableName": "btn8Push",
         "id": 75,
         "eepromAddress": 202,
@@ -791,7 +455,7 @@
     ],
     "lastThemeUuid": "815316bb-76c9-436a-8f83-be0bced963df",
     "applicationUUID": "2f01b637-3a3d-4f52-b7d6-f202ba4f0747",
-    "applicationName": "APBA",
+    "applicationName": "SmartPusher",
     "lastProperties": [
       {
         "name": "DISPLAY_VARIABLE",
