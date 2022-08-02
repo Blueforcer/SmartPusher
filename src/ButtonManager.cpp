@@ -268,24 +268,22 @@ void ButtonManager_::handleReleased(uint8_t btn)
 
 void ButtonManager_::SendState(int type, uint8_t btn)
 {
-    String json;
-    StaticJsonDocument<200> doc;
     switch (type)
     {
     case 1:
-        MqttManager.publish(("Button" + String(btn + 1) + "/click").c_str(), "true");
+        MqttManager.publish(("button" + String(btn + 1) + "/click").c_str(), "true");
         break;
     case 2:
-        MqttManager.publish(("Button" + String(btn + 1) + "/double_click").c_str(), "true");
+        MqttManager.publish(("button" + String(btn + 1) + "/double_click").c_str(), "true");
         break;
     case 3:
-        MqttManager.publish(("Button" + String(btn + 1) + "/long_click").c_str(), "true");
+        MqttManager.publish(("button" + String(btn + 1) + "/long_click").c_str(), "true");
         break;
     case 4:
-        MqttManager.publish(("Button" + String(btn + 1) + "/push").c_str(), "true");
+        MqttManager.publish(("button" + String(btn + 1) + "/push").c_str(), "true");
         break;
     case 5:
-        MqttManager.publish(("Button" + String(btn + 1) + "/push").c_str(), "false");
+        MqttManager.publish(("button" + String(btn + 1) + "/push").c_str(), "false");
         break;
     default:
         break;
@@ -293,18 +291,17 @@ void ButtonManager_::SendState(int type, uint8_t btn)
 
     if (type != 4 || type != 5)
     {
-        json = "";
         delay(500);
         switch (type)
         {
         case 1:
-            MqttManager.publish(("Button" + String(btn + 1) + "/click").c_str(), "false");
+            MqttManager.publish(("button" + String(btn + 1) + "/click").c_str(), "false");
             break;
         case 2:
-            MqttManager.publish(("Button" + String(btn + 1) + "/double_click").c_str(), "false");
+            MqttManager.publish(("button" + String(btn + 1) + "/double_click").c_str(), "false");
             break;
         case 3:
-            MqttManager.publish(("Button" + String(btn + 1) + "/long_click").c_str(), "false");
+            MqttManager.publish(("button" + String(btn + 1) + "/long_click").c_str(), "false");
             break;
         default:
             break;
