@@ -1,9 +1,9 @@
-#define WIFI_SSID ""
-#define WIFI_PASS ""
-#define MQTT_HOST ""
+#define WIFI_SSID "Kindergarten"
+#define WIFI_PASS "53825382"
+#define MQTT_HOST "192.168.178.10"
 #define MQTT_PORT 1883
-#define MQTT_USER ""
-#define MQTT_PASS ""
+#define MQTT_USER "blueforcer"
+#define MQTT_PASS "53825382"
 #define MQTT_PREFIX "SmartPusher"
 #define COLON_BLINK true
 #define NTP_SERVER "de.pool.ntp.org"

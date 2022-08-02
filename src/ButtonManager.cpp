@@ -216,7 +216,7 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
         SystemManager.ShowButtonScreen("Click");
 
         ShowAnimation(1, btn);
-        SendState("click", btn);
+        SendState(1, btn);
     }
 }
 
@@ -227,7 +227,7 @@ void ButtonManager_::handleDoubleClick(uint8_t btn)
         SystemManager.ShowButtonScreen("Double");
 
         ShowAnimation(2, btn);
-        SendState("double", btn);
+        SendState(2, btn);
     }
 }
 
@@ -241,7 +241,7 @@ void ButtonManager_::handleLongClick(uint8_t btn)
     {
         SystemManager.ShowButtonScreen("Long");
         ShowAnimation(3, btn);
-        SendState("long", btn);
+        SendState(3, btn);
     }
 }
 
@@ -251,7 +251,7 @@ void ButtonManager_::handlePressed(uint8_t btn)
     {
         SystemManager.ShowButtonScreen("Down");
         ShowAnimation(4, btn);
-        SendState("down", btn);
+        SendState(4, btn);
     }
 }
 
@@ -262,19 +262,60 @@ void ButtonManager_::handleReleased(uint8_t btn)
     {
         SystemManager.ShowButtonScreen("Up");
         ShowAnimation(5, btn);
-        SendState("up", btn);
+        SendState(5, btn);
     }
 }
 
-void ButtonManager_::SendState(String type, uint8_t btn)
+void ButtonManager_::SendState(int type, uint8_t btn)
 {
     String json;
     StaticJsonDocument<200> doc;
-    doc["event"] = type;
+    switch (type)
+    {
+    case 1:
+        doc["click"] = true;
+        break;
+    case 2:
+        doc["double_click"] = true;
+        break;
+    case 3:
+        doc["long_click"] = true;
+        break;
+    case 4:
+        doc["push"] = true;
+        break;
+    case 5:
+        doc["push"] = false;
+        break;
+    default:
+        break;
+    }
+
     serializeJsonPretty(doc, json);
     MqttManager.publish(("Button" + String(btn + 1)).c_str(), json.c_str());
-    // uint32_t length = json.length();
-    // Serial.printf("%c%c%c%c%s", (length & 0xFF000000) >> 24, (length & 0x00FF0000) >> 16, (length & 0x0000FF00) >> 8, (length & 0x000000FF), json.c_str());
+
+    if (type != 4 || type != 5)
+    {
+        json = "";
+        delay(500);
+        switch (type)
+        {
+        case 1:
+            doc["click"] = false;
+            break;
+        case 2:
+            doc["double_click"] = false;
+            break;
+        case 3:
+            doc["long_click"] = false;
+            break;
+        default:
+            break;
+        }
+
+        serializeJsonPretty(doc, json);
+        MqttManager.publish(("Button" + String(btn + 1)).c_str(), json.c_str());
+    }
 }
 
 bool ButtonManager_::getButtonState(uint8_t btn)
@@ -293,7 +334,6 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
     switch (mode)
     {
     case 0:
-
         leds[btn].Off();
         break;
     case 1:

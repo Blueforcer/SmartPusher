@@ -1,7 +1,7 @@
 #include <MqttManager.h>
 #include <PubSubClient.h>
 #include <config.h>
-
+#include <ArduinoJson.h>
 
 //#include "TinyMqtt.h"
 
@@ -44,6 +44,11 @@ boolean reconnect()
     {
         client.subscribe((MQTT_PREFIX + String("/brightness")).c_str());
         Serial.println("MQTT Connected");
+
+        String json;
+        StaticJsonDocument<200> doc;
+
+        
     }
 
     return client.connected();
