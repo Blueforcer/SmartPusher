@@ -45,12 +45,10 @@ boolean reconnect()
         client.subscribe((MQTT_PREFIX + String("/brightness")).c_str());
         Serial.println("MQTT Connected");
 
-        String json;
-        StaticJsonDocument<200> doc;
-        doc["name"] = "SmartPusher";
-        doc["state_topic"] = "homeassistant/sensor/SmartPusher/state";
-        serializeJsonPretty(doc, json);
-        client.publish("homeassistant/sensor/SmartPusher/config", json.c_str());
+        MqttManager.publish("button1/click", "false");
+        MqttManager.publish("button1/double_click", "false");
+        MqttManager.publish("button1/long_click", "false");
+        MqttManager.publish("button1/push", "false");
     }
 
     return client.connected();
