@@ -273,26 +273,23 @@ void ButtonManager_::SendState(int type, uint8_t btn)
     switch (type)
     {
     case 1:
-        doc["click"] = true;
+        MqttManager.publish(("Button" + String(btn + 1) + "/click").c_str(), "true");
         break;
     case 2:
-        doc["double_click"] = true;
+        MqttManager.publish(("Button" + String(btn + 1) + "/double_click").c_str(), "true");
         break;
     case 3:
-        doc["long_click"] = true;
+        MqttManager.publish(("Button" + String(btn + 1) + "/long_click").c_str(), "true");
         break;
     case 4:
-        doc["push"] = true;
+        MqttManager.publish(("Button" + String(btn + 1) + "/push").c_str(), "true");
         break;
     case 5:
-        doc["push"] = false;
+        MqttManager.publish(("Button" + String(btn + 1) + "/push").c_str(), "false");
         break;
     default:
         break;
     }
-
-    serializeJsonPretty(doc, json);
-    MqttManager.publish(("Button" + String(btn + 1)).c_str(), json.c_str());
 
     if (type != 4 || type != 5)
     {
@@ -301,20 +298,17 @@ void ButtonManager_::SendState(int type, uint8_t btn)
         switch (type)
         {
         case 1:
-            doc["click"] = false;
+            MqttManager.publish(("Button" + String(btn + 1) + "/click").c_str(), "false");
             break;
         case 2:
-            doc["double_click"] = false;
+            MqttManager.publish(("Button" + String(btn + 1) + "/double_click").c_str(), "false");
             break;
         case 3:
-            doc["long_click"] = false;
+            MqttManager.publish(("Button" + String(btn + 1) + "/long_click").c_str(), "false");
             break;
         default:
             break;
         }
-
-        serializeJsonPretty(doc, json);
-        MqttManager.publish(("Button" + String(btn + 1)).c_str(), json.c_str());
     }
 }
 

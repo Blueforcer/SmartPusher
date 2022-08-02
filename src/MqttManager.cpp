@@ -47,8 +47,10 @@ boolean reconnect()
 
         String json;
         StaticJsonDocument<200> doc;
-
-        
+        doc["name"] = "SmartPusher";
+        doc["state_topic"] = "homeassistant/sensor/SmartPusher/state";
+        serializeJsonPretty(doc, json);
+        client.publish("homeassistant/sensor/SmartPusher/config", json.c_str());
     }
 
     return client.connected();
