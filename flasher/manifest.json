@@ -8,10 +8,10 @@
     {
       "chipFamily": "ESP32",
       "parts": [
-        { "path": "firmware/bootloader.bin", "offset": 4096 },
-        { "path": "firmware/partitions.bin", "offset": 32768 },
-        { "path": "firmware/boot", "offset": 57344 },
-        { "path": "firmware/firmware.bin", "offset": 65536 }
+        { "path": "flasher/firmware/bootloader.bin", "offset": 4096 },
+        { "path": "flasher/firmware/partitions.bin", "offset": 32768 },
+        { "path": "flasher/firmware/boot", "offset": 57344 },
+        { "path": "flasher/firmware/firmware.bin", "offset": 65536 }
       ]
     }
   ]
