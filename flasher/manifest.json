@@ -17,7 +17,7 @@
           "offset": 32768
         },
         {
-          "path": "boot",
+          "path": "boot.bin",
           "offset": 57344
         },
         {
