@@ -1,6 +1,6 @@
 {
   "name": "SmartPusher",
-  "version": "1.1023",
+  "version": "1.2",
   "home_assistant_domain": "SmartPusher",
   "funding_url": "https://blueforcer.de",
   "new_install_prompt_erase": false,
@@ -8,10 +8,22 @@
     {
       "chipFamily": "ESP32",
       "parts": [
-        { "path": "flasher/bootloader.bin", "offset": 4096 },
-        { "path": "flasher/partitions.bin", "offset": 32768 },
-        { "path": "flasher/boot", "offset": 57344 },
-        { "path": "flasher/firmware.bin", "offset": 65536 }
+        {
+          "path": "bootloader.bin",
+          "offset": 4096
+        },
+        {
+          "path": "partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "boot",
+          "offset": 57344
+        },
+        {
+          "path": "firmware.bin",
+          "offset": 65536
+        }
       ]
     }
   ]
