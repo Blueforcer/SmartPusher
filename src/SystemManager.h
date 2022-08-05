@@ -3,8 +3,6 @@
 
 #include <ButtonManager.h>
 
-#include "TCMenu_menu.h"
-
 class SystemManager_
 {
 private:
@@ -15,10 +13,17 @@ public:
 
     void setup();
     void tick();
-    void EnterMenu();
-    void ShowTitleScreen();
-    void ShowButtonScreen(const char *type);
+    void show();
+    void clear();
+    void renderButtonScreen();
+    void renderClockScreen();
+    void drawtext(uint8_t x, uint8_t y, String text);
+    void ShowButtonScreen(uint8_t btn, const char *type);
     void setBrightness(uint8_t val);
+    const char *getValue(const char *name);
+    boolean getBool(const char *name);
+    int getInt(const char *name);
+    String getString(const char *name);
 };
 
 extern SystemManager_ &SystemManager;

@@ -2,7 +2,7 @@
 #include <PubSubClient.h>
 #include <config.h>
 #include <ArduinoJson.h>
-
+#include <WiFi.h>
 //#include "TinyMqtt.h"
 
 // MqttBroker broker(PORT);
@@ -30,7 +30,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     String strPayload = String((char *)payload);
     Serial.println(strTopic);
     Serial.println(strPayload);
-    if (strTopic == MQTT_PREFIX + String("/brightness"))
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
     }
@@ -40,9 +40,9 @@ long lastReconnectAttempt = 0;
 
 boolean reconnect()
 {
-    if (client.connect(MQTT_PREFIX, MQTT_USER, MQTT_PASS))
+    if (client.connect(SystemManager.getValue("mqttprefix"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd")))
     {
-        client.subscribe((MQTT_PREFIX + String("/brightness")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
         Serial.println("MQTT Connected");
 
         for (int i = 1; i < 9; i++)
@@ -59,7 +59,8 @@ boolean reconnect()
 
 void MqttManager_::setup()
 {
-    client.setServer(MQTT_HOST, MQTT_PORT);
+    uint16_t port = SystemManager.getInt("mqttport");
+    client.setServer(SystemManager.getValue("mqttbroker"), port);
     client.setCallback(callback);
     lastReconnectAttempt = 0;
 }
@@ -94,7 +95,7 @@ void MqttManager_::tick()
 void MqttManager_::publish(const char *topic, const char *payload)
 {
     char result[100]; // array to hold the result.
-    strcpy(result, MQTT_PREFIX);
+    strcpy(result, SystemManager.getValue("mqttprefix"));
     strcat(result, "/");   // copy string one into the result.
     strcat(result, topic); // append string two to the result.
     client.publish(result, payload);

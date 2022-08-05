@@ -6,7 +6,6 @@
 #include <vector>
 #include <jled.h>
 #include <MqttManager.h>
-#include <tcMenu.h>
 
 using namespace ace_button;
 using namespace std;
@@ -61,7 +60,7 @@ public:
     void setStates();
     void checkButtons();
     void LeaveMenuState();
-    void CheckMenu();
+
     void setBrightness(uint8_t btn);
     void ShowAnimation(uint8_t type, uint8_t btn);
     bool getButtonState(uint8_t);

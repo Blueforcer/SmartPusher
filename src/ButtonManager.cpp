@@ -1,11 +1,7 @@
 #include <ButtonManager.h>
 #include <SystemManager.h>
 #include <ArduinoJson.h>
-#include "SwitchInput.h"
 
-BooleanMenuItem *PushItems[]{&menubtn1Push, &menubtn2Push, &menubtn3Push, &menubtn4Push, &menubtn5Push, &menubtn6Push, &menubtn7Push, &menubtn8Push};
-
-bool MenuEntered = false;
 bool ResetLights = false;
 unsigned long prevMillis = 0;
 
@@ -48,20 +44,12 @@ void ButtonManager_::setup()
     setStates();
 }
 
-void ButtonManager_::LeaveMenuState()
-{
-    Serial.println("Leave Menu");
-    MenuEntered = false;
-    setStates();
-}
-
 void ButtonManager_::tick()
 {
     for (int i = 0; i < 8; i++)
     {
         leds[i].Update();
     }
-    CheckMenu();
 
     // Check if the menu buttons are being pressed. If so, show menu
     checkButtons();
@@ -80,32 +68,6 @@ void ButtonManager_::tick()
             prevMillis = currentMillis;
             setStates();
             ResetLights = false;
-        }
-    }
-}
-
-void ButtonManager_::CheckMenu()
-{
-    if (longPressed[0] && longPressed[1])
-    {
-        for (int i = 0; i < 8; i++)
-        {
-            longPressed[i] = false;
-            leds[i].Breathe(2000).Forever();
-        }
-        if (MenuEntered)
-        {
-            SystemManager.ShowTitleScreen();
-            setStates();
-            MenuEntered = false;
-            return;
-        }
-        else
-        {
-            MenuEntered = true;
-            SystemManager.EnterMenu();
-            Serial.println("Menu Entered");
-            return;
         }
     }
 }
@@ -205,12 +167,45 @@ void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
     prevMillis = millis();
 }
 
+boolean getPushSetting(uint8_t btn)
+{
+    switch (btn)
+    {
+    case 0:
+        return SystemManager.getBool("btn1push");
+        break;
+    case 1:
+        return SystemManager.getBool("btn2push");
+        break;
+    case 2:
+        return SystemManager.getBool("btn3push");
+        break;
+    case 3:
+        return SystemManager.getBool("btn4push");
+        break;
+    case 4:
+        return SystemManager.getBool("btn5push");
+        break;
+    case 5:
+        return SystemManager.getBool("btn6push");
+        break;
+    case 6:
+        return SystemManager.getBool("btn7push");
+        break;
+    case 7:
+        return SystemManager.getBool("btn8push");
+        break;
+    default:
+        break;
+    }
+}
+
 void ButtonManager_::handleSingleClick(uint8_t btn)
 {
-    if (!PushItems[btn]->getBoolean() && !MenuEntered)
+    Serial.println(getPushSetting(btn));
+    if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen("Click");
-
+        SystemManager.ShowButtonScreen(btn, "Click");
         ShowAnimation(1, btn);
         SendState(1, btn);
     }
@@ -218,10 +213,9 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 
 void ButtonManager_::handleDoubleClick(uint8_t btn)
 {
-    if (!PushItems[btn]->getBoolean() && !MenuEntered)
+    if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen("Double");
-
+        SystemManager.ShowButtonScreen(btn, "Double");
         ShowAnimation(2, btn);
         SendState(2, btn);
     }
@@ -230,12 +224,9 @@ void ButtonManager_::handleDoubleClick(uint8_t btn)
 void ButtonManager_::handleLongClick(uint8_t btn)
 {
 
-    longPressed[btn] = true;
-    if (!MenuEntered)
-        CheckMenu();
-    if (!PushItems[btn]->getBoolean() && !MenuEntered)
+    if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen("Long");
+        SystemManager.ShowButtonScreen(btn, "Long");
         ShowAnimation(3, btn);
         SendState(3, btn);
     }
@@ -243,9 +234,9 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 
 void ButtonManager_::handlePressed(uint8_t btn)
 {
-    if (PushItems[btn]->getBoolean() && !MenuEntered)
+    if (getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen("Down");
+        SystemManager.ShowButtonScreen(btn, "Down");
         ShowAnimation(4, btn);
         SendState(4, btn);
     }
@@ -253,10 +244,9 @@ void ButtonManager_::handlePressed(uint8_t btn)
 
 void ButtonManager_::handleReleased(uint8_t btn)
 {
-    longPressed[btn] = false;
-    if (PushItems[btn]->getBoolean() && !MenuEntered)
+    if (getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen("Up");
+        SystemManager.ShowButtonScreen(btn, "Up");
         ShowAnimation(5, btn);
         SendState(5, btn);
     }
@@ -339,12 +329,14 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 
 void ButtonManager_::setStates()
 {
-    setButtonLight(0, menuLightBtn1.getCurrentValue());
-    setButtonLight(1, menuLightBtn2.getCurrentValue());
-    setButtonLight(2, menuLightBtn3.getCurrentValue());
-    setButtonLight(3, menuLightBtn4.getCurrentValue());
-    setButtonLight(4, menuLightBtn5.getCurrentValue());
-    setButtonLight(5, menuLightBtn6.getCurrentValue());
-    setButtonLight(6, menuLightBtn7.getCurrentValue());
-    setButtonLight(7, menuLightBtn8.getCurrentValue());
+    int ledtype = SystemManager.getInt("led");
+
+    setButtonLight(0, ledtype);
+    setButtonLight(1, ledtype);
+    setButtonLight(2, ledtype);
+    setButtonLight(3, ledtype);
+    setButtonLight(4, ledtype);
+    setButtonLight(5, ledtype);
+    setButtonLight(6, ledtype);
+    setButtonLight(7, ledtype);
 }
