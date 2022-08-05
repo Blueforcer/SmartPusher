@@ -193,7 +193,7 @@ boolean initWiFi()
     if (!connected)
     {
         WiFi.mode(WIFI_AP);
-        WiFi.softAP(conf.getApName(), "", 1);
+        WiFi.softAP("SmartPusher", "", 1);
         gfx.clearBuffer();
         gfx.drawStr(15, 25, "AP MODE");
         gfx.drawStr(10, 40, "192.168.1.4");
