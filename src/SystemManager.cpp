@@ -239,16 +239,13 @@ void SystemManager_::setup()
 {
 
     gfx.begin();
-
-    // Show initial display buffer contents on the screen --
-    // the library initializes this with an Adafruit splash screen.
     gfx.clearBuffer();                 // clear the internal memory
     gfx.setFont(u8g2_font_ncenB08_tr); // choose a suitable font
     delay(1000);
     conf.registerOnSave(SettingsSaved);
     conf.setDescription(params);
     conf.readConfig();
-   
+
     initWiFi();
 
     server.on("/", handleRoot);
@@ -264,6 +261,7 @@ void SystemManager_::setup()
         }
 
         configTzTime(TIMEZONE, NTP_SERVER);
+        getLocalTime(&timeinfo);
     }
 }
 
@@ -353,22 +351,10 @@ void SystemManager_::renderClockScreen()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
-        // save the last time you blinked the LED
         gfx.clearBuffer();
         previousMillis = currentMillis;
 
-        if (!getLocalTime(&timeinfo))
-        {
-            Serial.println("Failed to obtain time");
-            return;
-        }
-
-        unsigned int year = 1900 + timeinfo.tm_year;
-        unsigned int month = timeinfo.tm_mon + 1;
-        unsigned int day = timeinfo.tm_mday;
-        unsigned int hour = timeinfo.tm_hour;
-        unsigned int minute = timeinfo.tm_min;
-        String weekDay = weekDays[timeinfo.tm_wday];
+               String weekDay = weekDays[timeinfo.tm_wday];
 
         if (conf.getBool("colonblink"))
         {
@@ -379,15 +365,14 @@ void SystemManager_::renderClockScreen()
             colon_switch = true;
         }
 
-        String fYear = String(year);
-        String fDate = (day < 10 ? "0" : "") + String(day) + "/" + (month < 10 ? "0" : "") + String(month);
-        String fTime = (hour < 10 ? "0" : "") + String(hour) + (colon_switch ? ":" : " ") + (minute < 10 ? "0" : "") + String(minute);
+        String fYear = String(1900 + timeinfo.tm_year);
+        String fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
+        String fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
 
         gfx.setFont(u8g2_font_inr16_mf);
         gfx.drawStr(0, 16, strcpy(new char[fDate.length() + 1], fDate.c_str()));
         gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
         gfx.drawStr(93, 8, strcpy(new char[fYear.length() + 1], fYear.c_str()));
-        gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
         gfx.drawStr(93, 17, strcpy(new char[weekDay.length() + 1], weekDay.c_str()));
         gfx.setFont(u8g2_font_inb30_mn);
         gfx.drawStr(2, 58, strcpy(new char[fTime.length() + 1], fTime.c_str()));

@@ -63,7 +63,7 @@ void ButtonManager_::tick()
                 return;
         }
 
-        if (currentMillis - prevMillis >= 1000)
+        if (currentMillis - prevMillis >= 2000)
         {
             prevMillis = currentMillis;
             setStates();
@@ -164,7 +164,7 @@ void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
         break;
     }
     ResetLights = true;
-    prevMillis = millis();
+    prevMillis = 0;
 }
 
 boolean getPushSetting(uint8_t btn)
@@ -317,7 +317,7 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         leds[btn].On();
         break;
     case 2:
-        leds[btn].Breathe(5000).Forever();
+        leds[btn].DelayBefore(btn*150).Breathe(5000).Forever();
         break;
     case 3:
         leds[btn].Off();
@@ -330,7 +330,6 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 void ButtonManager_::setStates()
 {
     int ledtype = SystemManager.getInt("leds");
-    Serial.println(ledtype);
     setButtonLight(0, ledtype);
     setButtonLight(1, ledtype);
     setButtonLight(2, ledtype);
