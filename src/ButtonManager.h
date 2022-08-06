@@ -17,7 +17,7 @@ private:
     const uint8_t buttonPins[8] = {32, 25, 27, 12, 19, 5, 16, 0};
 
     // Different states and modes of the buttons
-    bool states[8] = {false, false, false, false, false, false, false, false};
+    uint8_t states[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     bool longPressed[8] = {false, false, false, false, false, false, false, false};
     bool modes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -64,7 +64,7 @@ public:
     void setBrightness(uint8_t btn);
     void ShowAnimation(uint8_t type, uint8_t btn);
     bool getButtonState(uint8_t);
-    void setButtonState(uint8_t, bool);
+    void setButtonState(uint8_t, uint8_t);
     void setButtonLight(uint8_t btn, uint8_t mode);
 
     AceButton *getButton(uint8_t);

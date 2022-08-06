@@ -300,7 +300,7 @@ bool ButtonManager_::getButtonState(uint8_t btn)
     return states[btn];
 }
 
-void ButtonManager_::setButtonState(uint8_t btn, bool state)
+void ButtonManager_::setButtonState(uint8_t btn, uint8_t state)
 {
     states[btn] = state;
     setStates();
@@ -317,10 +317,23 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         leds[btn].On();
         break;
     case 2:
-        leds[btn].DelayBefore(btn*150).Breathe(5000).Forever();
+        leds[btn].DelayBefore(btn * 150).Breathe(5000).Forever();
         break;
     case 3:
-        leds[btn].Off();
+        switch (states[btn])
+        {
+        case 0:
+            leds[btn].Off();
+            break;
+        case 1:
+            leds[btn].On();
+            break;
+        case 2:
+            leds[btn].Breathe(5000).Forever();
+            break;
+        default:
+            break;
+        }
         break;
     default:
         break;

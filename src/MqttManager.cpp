@@ -34,6 +34,38 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
     }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button1/state"))
+    {
+        ButtonManager.setButtonState(0, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button2/state"))
+    {
+        ButtonManager.setButtonState(1, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button3/state"))
+    {
+        ButtonManager.setButtonState(2, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button4/state"))
+    {
+        ButtonManager.setButtonState(3, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button5/state"))
+    {
+        ButtonManager.setButtonState(4, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button6/state"))
+    {
+        ButtonManager.setButtonState(5, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button7/state"))
+    {
+        ButtonManager.setButtonState(6, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button8/state"))
+    {
+        ButtonManager.setButtonState(7, atoi(strPayload.c_str()));
+    }
 }
 
 long lastReconnectAttempt = 0;
@@ -43,6 +75,14 @@ boolean reconnect()
     if (client.connect(SystemManager.getValue("mqttprefix"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd")))
     {
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button1/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button2/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button3/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button4/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button5/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
         Serial.println("MQTT Connected");
 
         for (int i = 1; i < 9; i++)
