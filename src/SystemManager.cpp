@@ -25,6 +25,11 @@ const char *Pushtype;
 uint8_t BtnNr;
 boolean TypeShown;
 
+String weekDay;
+String fYear;
+String fDate;
+String fTime;
+
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 bool colon_switch = true;
 
@@ -354,7 +359,7 @@ void SystemManager_::renderClockScreen()
         gfx.clearBuffer();
         previousMillis = currentMillis;
 
-               String weekDay = weekDays[timeinfo.tm_wday];
+        weekDay = weekDays[timeinfo.tm_wday];
 
         if (conf.getBool("colonblink"))
         {
@@ -365,18 +370,17 @@ void SystemManager_::renderClockScreen()
             colon_switch = true;
         }
 
-        String fYear = String(1900 + timeinfo.tm_year);
-        String fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
-        String fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
-
+        fYear = String(1900 + timeinfo.tm_year);
+        fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
+        fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
         gfx.setFont(u8g2_font_inr16_mf);
-        gfx.drawStr(0, 16, strcpy(new char[fDate.length() + 1], fDate.c_str()));
+        gfx.drawStr(0, 16, fDate.c_str());
         gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
-        gfx.drawStr(93, 8, strcpy(new char[fYear.length() + 1], fYear.c_str()));
-        gfx.drawStr(93, 17, strcpy(new char[weekDay.length() + 1], weekDay.c_str()));
+        gfx.drawStr(93, 8,  fYear.c_str());
+        gfx.drawStr(93, 17,  weekDay.c_str());
         gfx.setFont(u8g2_font_inb30_mn);
-        gfx.drawStr(2, 58, strcpy(new char[fTime.length() + 1], fTime.c_str()));
-
+        gfx.drawStr(2, 58,  fTime.c_str());
+        Serial.println(ESP.getFreeHeap());
         gfx.sendBuffer();
     }
 }
