@@ -23,6 +23,7 @@ const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
 uint8_t BtnNr;
+boolean TypeShown;
 
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 bool colon_switch = true;
@@ -69,12 +70,12 @@ String params = "["
                                       "'label':'MQTT Username',"
                                       "'type':" +
                 String(INPUTTEXT) + ","
-                                        "'default':''"
-                                        "},"
-                                        "{"
-                                        "'name':'mqttpwd',"
-                                        "'label':'MQTT Password',"
-                                        "'type':" +
+                                    "'default':''"
+                                    "},"
+                                    "{"
+                                    "'name':'mqttpwd',"
+                                    "'label':'MQTT Password',"
+                                    "'type':" +
                 String(INPUTPASSWORD) + ","
                                         "'default':''"
                                         "},"
@@ -228,6 +229,12 @@ SystemManager_ &SystemManager_::getInstance()
 // Initialize the global shared instance
 SystemManager_ &SystemManager = SystemManager.getInstance();
 
+void SettingsSaved(String result)
+{
+    ButtonManager.setStates();
+    return;
+}
+
 void SystemManager_::setup()
 {
 
@@ -238,9 +245,10 @@ void SystemManager_::setup()
     gfx.clearBuffer();                 // clear the internal memory
     gfx.setFont(u8g2_font_ncenB08_tr); // choose a suitable font
     delay(1000);
+    conf.registerOnSave(SettingsSaved);
     conf.setDescription(params);
     conf.readConfig();
-
+   
     initWiFi();
 
     server.on("/", handleRoot);
@@ -300,7 +308,6 @@ const char *SystemManager_::getValue(const char *tag)
 
 boolean SystemManager_::getBool(const char *tag)
 {
-
     return conf.getBool(tag);
 }
 
@@ -324,15 +331,20 @@ void SystemManager_::ShowButtonScreen(uint8_t btn, const char *type)
 
 void SystemManager_::renderButtonScreen()
 {
+    if (!TypeShown)
+    {
+        gfx.clearBuffer();
+        gfx.setFont(u8g2_font_inb24_mr);
+        gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(Pushtype)) / 2, 45, Pushtype);
+        gfx.sendBuffer();
+        TypeShown = true;
+    }
     unsigned long currentMillis = millis();
-    gfx.clearBuffer();
-    gfx.setFont(u8g2_font_inb24_mr);
-    gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(Pushtype)) / 2, 45, Pushtype);
-    gfx.sendBuffer();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         previousMillis = currentMillis;
         screen = 0;
+        TypeShown = false;
     }
 }
 

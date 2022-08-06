@@ -317,7 +317,7 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         leds[btn].On();
         break;
     case 2:
-        leds[btn].Breathe(2000).Forever();
+        leds[btn].Breathe(5000).Forever();
         break;
     case 3:
         leds[btn].Off();
@@ -329,8 +329,8 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 
 void ButtonManager_::setStates()
 {
-    int ledtype = SystemManager.getInt("led");
-
+    int ledtype = SystemManager.getInt("leds");
+    Serial.println(ledtype);
     setButtonLight(0, ledtype);
     setButtonLight(1, ledtype);
     setButtonLight(2, ledtype);
