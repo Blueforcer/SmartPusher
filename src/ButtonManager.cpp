@@ -86,6 +86,15 @@ void ButtonManager_::setBrightness(uint8_t val)
     setStates();
 }
 
+void ButtonManager_::turnAllOff()
+{
+    for (int i = 0; i < 8; i++)
+    {
+        leds[i].Off();
+    }
+    
+}
+
 void ButtonManager_::checkButtons()
 {
     for (int i = 0; i < 8; i++)
@@ -311,10 +320,10 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
     switch (mode)
     {
     case 0:
-        leds[btn].Off(500);
+        leds[btn].Off(1000);
         break;
     case 1:
-        leds[btn].On(500);
+        leds[btn].On(1000);
         break;
     case 2:
         leds[btn].DelayBefore(btn * 150).Breathe(5000).Forever();
@@ -323,13 +332,13 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         switch (states[btn])
         {
         case 0:
-            leds[btn].Off(500);
+            leds[btn].Off(1000);
             break;
         case 1:
-            leds[btn].On(500);
+            leds[btn].On(1000);
             break;
         case 2:
-            leds[btn].Breathe(5000).Forever();
+            leds[btn].Breathe(1000).Forever();
             break;
         default:
             break;

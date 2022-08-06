@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <config.h>
 #include <WiFi.h>
+#include <Update.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -32,7 +33,7 @@ String fTime;
 
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 bool colon_switch = true;
-
+const char *updateIndex = "<form method='POST' action='/doupdate' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 String params = "["
                 "{"
                 "'name':'ssid',"
@@ -241,6 +242,38 @@ void SettingsSaved(String result)
     return;
 }
 
+void update_started()
+{
+    Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished()
+{
+    Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total)
+{
+    static int last_percent = 0;
+    Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+
+    int percent = (100 * cur) / total;
+    Serial.println(percent);
+
+    gfx.sendBuffer();
+    if (percent != last_percent)
+    {
+        uint8_t light = percent / 12.5;
+        ButtonManager.setButtonLight(light, 1);
+        ButtonManager.tick();
+        gfx.clearBuffer();
+        gfx.setCursor(25, 40);
+        gfx.printf("%d %%", percent);
+        last_percent = percent;
+        gfx.sendBuffer();
+    }
+}
+
 void SystemManager_::setup()
 {
 
@@ -253,8 +286,62 @@ void SystemManager_::setup()
     conf.readConfig();
 
     initWiFi();
-
+    Update.onProgress(update_progress);
     server.on("/", handleRoot);
+    server.on("/update", HTTP_GET, []()
+              {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", updateIndex); });
+    server.on(
+        "/doupdate", HTTP_POST, []()
+        {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "NOK" : "OK");
+    delay(1000);
+    ESP.restart(); },
+        []()
+        {
+            HTTPUpload &upload = server.upload();
+            if (upload.status == UPLOAD_FILE_START)
+            {
+                gfx.setFont(u8g2_font_logisoso30_tf );
+                ButtonManager.turnAllOff();
+                ButtonManager.tick();
+                Serial.setDebugOutput(true);
+                Serial.printf("Update: %s\n", upload.filename.c_str());
+                uint32_t maxSketchSpace = (1048576 - 0x1000) & 0xFFFFF000;
+                gfx.clearBuffer();
+                gfx.drawStr(15, 25, "UPDATE");
+
+                gfx.sendBuffer();
+
+                if (!Update.begin(maxSketchSpace))
+                { // start with max available size
+                    Update.printError(Serial);
+                }
+            }
+            else if (upload.status == UPLOAD_FILE_WRITE)
+            {
+
+                if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
+                {
+                    Update.printError(Serial);
+                }
+            }
+            else if (upload.status == UPLOAD_FILE_END)
+            {
+                if (Update.end(true))
+                { // true to set the size to the current progress
+                    Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+                }
+                else
+                {
+                    Update.printError(Serial);
+                }
+                Serial.setDebugOutput(false);
+            }
+            yield();
+        });
     server.begin(80);
 
     if (connected)
@@ -377,10 +464,10 @@ void SystemManager_::renderClockScreen()
         gfx.setFont(u8g2_font_inr16_mf);
         gfx.drawStr(0, 16, fDate.c_str());
         gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
-        gfx.drawStr(93, 8,  fYear.c_str());
-        gfx.drawStr(93, 17,  weekDay.c_str());
+        gfx.drawStr(93, 8, fYear.c_str());
+        gfx.drawStr(93, 17, weekDay.c_str());
         gfx.setFont(u8g2_font_inb30_mn);
-        gfx.drawStr(2, 58,  fTime.c_str());
+        gfx.drawStr(2, 58, fTime.c_str());
         gfx.sendBuffer();
     }
 }
