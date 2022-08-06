@@ -380,7 +380,6 @@ void SystemManager_::renderClockScreen()
         gfx.drawStr(93, 17,  weekDay.c_str());
         gfx.setFont(u8g2_font_inb30_mn);
         gfx.drawStr(2, 58,  fTime.c_str());
-        Serial.println(ESP.getFreeHeap());
         gfx.sendBuffer();
     }
 }
