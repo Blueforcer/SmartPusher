@@ -390,6 +390,9 @@ void SystemManager_::clear()
 
 void SystemManager_::setBrightness(uint8_t val)
 {
+    gfx.setContrast(val);
+    gfx.setPowerSave(val == 0);
+    ButtonManager.setBrightness(val);
 }
 
 const char *SystemManager_::getValue(const char *tag)
