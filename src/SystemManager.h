@@ -10,7 +10,6 @@ private:
 
 public:
     static SystemManager_ &getInstance();
-
     void setup();
     void tick();
     void show();

@@ -85,6 +85,19 @@ String params = "["
                 String(INPUTPASSWORD) + ","
                                         "'default':''"
                                         "},"
+
+"{"
+"'name':'ntp',"
+"'label':'NTP Server',"
+"'type':"+String(INPUTTEXT)+","
+"'default':'de.pool.ntp.org'"
+"},"
+"{"
+"'name':'tz',"
+"'label':'TZ INFO',"
+"'type':"+String(INPUTTEXT)+","
+"'default':'CET-1CEST,M3.5.0/02,M10.5.0/03'"
+"},"
                                         "{"
                                         "'name':'colonblink',"
                                         "'label':'Colon Blink',"
@@ -304,7 +317,7 @@ void SystemManager_::setup()
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START)
             {
-                gfx.setFont(u8g2_font_logisoso30_tf );
+                gfx.setFont(u8g2_font_logisoso30_tf);
                 ButtonManager.turnAllOff();
                 ButtonManager.tick();
                 Serial.setDebugOutput(true);
@@ -353,7 +366,7 @@ void SystemManager_::setup()
             Serial.println("MDNS responder gestartet");
         }
 
-        configTzTime(TIMEZONE, NTP_SERVER);
+        configTzTime(conf.getString("tz").c_str(), conf.getString("ntp").c_str());
         getLocalTime(&timeinfo);
     }
 }
@@ -447,6 +460,7 @@ void SystemManager_::renderClockScreen()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
+        getLocalTime(&timeinfo);
         gfx.clearBuffer();
         previousMillis = currentMillis;
 
