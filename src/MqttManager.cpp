@@ -83,8 +83,7 @@ boolean reconnect()
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
-        Serial.println("MQTT Connected");
-
+       
         for (int i = 1; i < 9; i++)
         {
             MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
@@ -92,6 +91,8 @@ boolean reconnect()
             MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
             MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
         }
+
+         Serial.println("MQTT Connected");
     }
 
     return client.connected();
@@ -134,9 +135,9 @@ void MqttManager_::tick()
 
 void MqttManager_::publish(const char *topic, const char *payload)
 {
-    char result[100]; // array to hold the result.
+    char result[100];
     strcpy(result, SystemManager.getValue("mqttprefix"));
-    strcat(result, "/");   // copy string one into the result.
-    strcat(result, topic); // append string two to the result.
+    strcat(result, "/"); 
+    strcat(result, topic); 
     client.publish(result, payload);
 }

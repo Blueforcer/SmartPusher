@@ -4,6 +4,7 @@
 
 bool ResetLights = false;
 unsigned long prevMillis = 0;
+int demoState = 0;
 
 // The getter for the instantiated singleton instance
 ButtonManager_ &ButtonManager_::getInstance()
@@ -92,7 +93,6 @@ void ButtonManager_::turnAllOff()
     {
         leds[i].Off();
     }
-    
 }
 
 void ButtonManager_::checkButtons()
@@ -131,6 +131,9 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 
 void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 {
+    int ledtype = SystemManager.getInt("leds");
+    if (ledtype = 3)
+        return;
     int count = 1;
     switch (type)
     {
@@ -326,7 +329,7 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         leds[btn].On(1000);
         break;
     case 2:
-        leds[btn].DelayBefore(btn * 150).Breathe(5000).Forever();
+        leds[btn].DelayBefore(btn * 200).Breathe(2000).Forever();
         break;
     case 3:
         switch (states[btn])

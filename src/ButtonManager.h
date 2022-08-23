@@ -54,9 +54,9 @@ public:
         JLed(17).Off().LowActive(),
         JLed(4).Off().LowActive()};
 
+
     void setup();
     void tick();
-
     void setStates();
     void checkButtons();
     void LeaveMenuState();
