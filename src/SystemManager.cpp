@@ -10,6 +10,7 @@
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
+const char *VERSION = "1.4";
 
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 
@@ -86,22 +87,24 @@ String params = "["
                                         "'default':''"
                                         "},"
 
-"{"
-"'name':'ntp',"
-"'label':'NTP Server',"
-"'type':"+String(INPUTTEXT)+","
-"'default':'de.pool.ntp.org'"
-"},"
-"{"
-"'name':'tz',"
-"'label':'TZ INFO',"
-"'type':"+String(INPUTTEXT)+","
-"'default':'CET-1CEST,M3.5.0/02,M10.5.0/03'"
-"},"
                                         "{"
-                                        "'name':'colonblink',"
-                                        "'label':'Colon Blink',"
+                                        "'name':'ntp',"
+                                        "'label':'NTP Server',"
                                         "'type':" +
+                String(INPUTTEXT) + ","
+                                    "'default':'de.pool.ntp.org'"
+                                    "},"
+                                    "{"
+                                    "'name':'tz',"
+                                    "'label':'TZ INFO',"
+                                    "'type':" +
+                String(INPUTTEXT) + ","
+                                    "'default':'CET-1CEST,M3.5.0/02,M10.5.0/03'"
+                                    "},"
+                                    "{"
+                                    "'name':'colonblink',"
+                                    "'label':'Colon Blink',"
+                                    "'type':" +
                 String(INPUTCHECKBOX) + ","
                                         "'default':'1'"
                                         "},"
@@ -185,8 +188,8 @@ boolean initWiFi()
     Serial.print(conf.values[0]);
     Serial.println(" herstellen");
     gfx.setFont(u8g2_font_tenfatguys_tr);
-    gfx.drawStr(10, 10, "Connecting");
-    gfx.drawStr(10, 30, "to WiFi...");
+    gfx.drawStr(10, 25, "Connecting");
+    gfx.drawStr(10, 45, "to WiFi...");
     gfx.sendBuffer();
     if (conf.values[0] != "")
     {
@@ -289,15 +292,18 @@ void update_progress(int cur, int total)
 
 void SystemManager_::setup()
 {
-
+    delay(2000);
     gfx.begin();
-    gfx.clearBuffer();                 // clear the internal memory
-    gfx.setFont(u8g2_font_ncenB08_tr); // choose a suitable font
-    delay(1000);
+    gfx.clearBuffer(); // clear the internal memory
+    gfx.setFont(u8g2_font_tenfatguys_tr);
+    gfx.drawStr(3, 30, "SmartPusher");
+    gfx.drawStr(50, 52, VERSION);
+    gfx.sendBuffer();
+    delay(2000);
     conf.registerOnSave(SettingsSaved);
     conf.setDescription(params);
     conf.readConfig();
-
+    gfx.clearBuffer();
     initWiFi();
     Update.onProgress(update_progress);
     server.on("/", handleRoot);
