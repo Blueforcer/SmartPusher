@@ -14,11 +14,13 @@ public:
     void tick();
     void show();
     void clear();
+    void renderMessageScreen();
     void renderButtonScreen();
     void renderClockScreen();
     void drawtext(uint8_t x, uint8_t y, String text);
     void ShowButtonScreen(uint8_t btn, const char *type);
     void setBrightness(uint8_t val);
+    void ShowMessage(String msg);
     const char *getValue(const char *name);
     boolean getBool(const char *name);
     int getInt(const char *name);

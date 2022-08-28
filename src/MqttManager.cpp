@@ -66,6 +66,10 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
         ButtonManager.setButtonState(7, atoi(strPayload.c_str()));
     }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/message"))
+    {
+        SystemManager.ShowMessage(strPayload);
+    }
 }
 
 long lastReconnectAttempt = 0;
@@ -83,7 +87,8 @@ boolean reconnect()
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
-       
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
+
         for (int i = 1; i < 9; i++)
         {
             MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
@@ -92,7 +97,7 @@ boolean reconnect()
             MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
         }
 
-         Serial.println("MQTT Connected");
+        Serial.println("MQTT Connected");
     }
 
     return client.connected();
@@ -137,7 +142,7 @@ void MqttManager_::publish(const char *topic, const char *payload)
 {
     char result[100];
     strcpy(result, SystemManager.getValue("mqttprefix"));
-    strcat(result, "/"); 
-    strcat(result, topic); 
+    strcat(result, "/");
+    strcat(result, topic);
     client.publish(result, payload);
 }

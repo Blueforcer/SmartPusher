@@ -41,7 +41,8 @@ void ButtonManager_::setup()
     buttonConfig->setFeature(ButtonConfig::kFeatureRepeatPress);
     buttonConfig->setFeature(
         ButtonConfig::kFeatureSuppressClickBeforeDoubleClick);
-    buttonConfig->setDoubleClickDelay(300);
+    buttonConfig->setClickDelay(300);
+    buttonConfig->setDoubleClickDelay(600);
     setStates();
 }
 

@@ -2,17 +2,21 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <WebConfig.h>
-#include <U8g2lib.h>
+#include "SSD1306.h"
 #include <Wire.h>
 #include <config.h>
 #include <WiFi.h>
 #include <Update.h>
+#include "font.h"
+#include "images.h"
+#include "SPI.h"
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.4";
+#define DISPLAY_WIDTH 128 // OLED display width, in pixels
+#define DISPLAY_HEIGHT 64 // OLED display height, in pixels
+const char *VERSION = "1.5";
 
-U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
+// U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
+SSD1306 gfx(0x3c, SDA, SCL);
 
 const int daylightOffset_sec = 3600;
 tm timeinfo;
@@ -24,9 +28,11 @@ const long CLOCK_INTERVAL = 1000;
 const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
+String Message;
+
 uint8_t BtnNr;
 boolean TypeShown;
-
+boolean MessageShown;
 String weekDay;
 String fYear;
 String fDate;
@@ -187,10 +193,10 @@ boolean initWiFi()
     Serial.print("Verbindung zu ");
     Serial.print(conf.values[0]);
     Serial.println(" herstellen");
-    gfx.setFont(u8g2_font_tenfatguys_tr);
-    gfx.drawStr(10, 25, "Connecting");
-    gfx.drawStr(10, 45, "to WiFi...");
-    gfx.sendBuffer();
+    gfx.setFont(ArialMT_Plain_16);
+    gfx.drawString(10, 5, "Connecting");
+    gfx.drawString(10, 30, "to WiFi...");
+    gfx.display();
     if (conf.values[0] != "")
     {
         WiFi.begin(conf.values[0].c_str(), conf.values[1].c_str());
@@ -204,24 +210,26 @@ boolean initWiFi()
         Serial.println();
         if (WiFi.status() == WL_CONNECTED)
         {
+            gfx.setFont(ArialMT_Plain_16);
             Serial.print("IP-Adresse = ");
             Serial.println(WiFi.localIP());
-            gfx.clearBuffer();
-            gfx.drawStr(15, 25, "Connected!");
-            gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(WiFi.localIP().toString().c_str())) / 2, 45, WiFi.localIP().toString().c_str());
-            gfx.sendBuffer();
+            gfx.clear();
+            gfx.drawString(20, 10, "Connected!");
+            gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(WiFi.localIP().toString())) / 2, 40, WiFi.localIP().toString());
+            gfx.display();
             connected = true;
             delay(3000);
         }
     }
     if (!connected)
     {
+        gfx.setFont(ArialMT_Plain_24);
         WiFi.mode(WIFI_AP);
         WiFi.softAP("SmartPusher", "", 1);
-        gfx.clearBuffer();
-        gfx.drawStr(15, 25, "AP MODE");
-        gfx.drawStr(10, 40, "192.168.1.4");
-        gfx.sendBuffer();
+        gfx.clear();
+        gfx.drawString(15, 15, "AP MODE");
+        gfx.drawString(10, 30, "192.168.1.4");
+        gfx.display();
     }
     return connected;
 }
@@ -276,34 +284,39 @@ void update_progress(int cur, int total)
     int percent = (100 * cur) / total;
     Serial.println(percent);
 
-    gfx.sendBuffer();
+    gfx.display();
     if (percent != last_percent)
     {
         uint8_t light = percent / 12.5;
         ButtonManager.setButtonLight(light, 1);
         ButtonManager.tick();
-        gfx.clearBuffer();
-        gfx.setCursor(25, 40);
-        gfx.printf("%d %%", percent);
+        gfx.clear();
+        gfx.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
         last_percent = percent;
-        gfx.sendBuffer();
+        gfx.display();
     }
 }
 
 void SystemManager_::setup()
 {
     delay(2000);
-    gfx.begin();
-    gfx.clearBuffer(); // clear the internal memory
-    gfx.setFont(u8g2_font_tenfatguys_tr);
-    gfx.drawStr(3, 30, "SmartPusher");
-    gfx.drawStr(50, 52, VERSION);
-    gfx.sendBuffer();
+    gfx.init();
+    gfx.flipScreenVertically();
+    gfx.clear(); // clear the internal memory
+    gfx.drawXbm(0, 0, 128, 64, logo);
+
+    gfx.display();
+
     delay(2000);
+    gfx.clear();
+    gfx.setFont(ArialMT_Plain_24);
+    gfx.drawString(45, 20, "v" + String(VERSION));
+    gfx.display();
+    delay(800);
     conf.registerOnSave(SettingsSaved);
     conf.setDescription(params);
     conf.readConfig();
-    gfx.clearBuffer();
+    gfx.clear();
     initWiFi();
     Update.onProgress(update_progress);
     server.on("/", handleRoot);
@@ -323,16 +336,16 @@ void SystemManager_::setup()
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START)
             {
-                gfx.setFont(u8g2_font_logisoso30_tf);
+                gfx.setFont(ArialMT_Plain_24);
                 ButtonManager.turnAllOff();
                 ButtonManager.tick();
                 Serial.setDebugOutput(true);
                 Serial.printf("Update: %s\n", upload.filename.c_str());
                 uint32_t maxSketchSpace = (1048576 - 0x1000) & 0xFFFFF000;
-                gfx.clearBuffer();
-                gfx.drawStr(15, 25, "UPDATE");
+                gfx.clear();
+                gfx.drawString(15, 25, "UPDATE");
 
-                gfx.sendBuffer();
+                gfx.display();
 
                 if (!Update.begin(maxSketchSpace))
                 { // start with max available size
@@ -388,6 +401,10 @@ void SystemManager_::tick()
         break;
     case 1:
         renderButtonScreen();
+        break;
+    case 2:
+        renderMessageScreen();
+        break;
     default:
         break;
     }
@@ -399,18 +416,26 @@ void SystemManager_::drawtext(uint8_t x, uint8_t y, String text)
 
 void SystemManager_::show()
 {
-    gfx.sendBuffer();
+    gfx.display();
 }
 
 void SystemManager_::clear()
 {
-    gfx.clearBuffer();
+    gfx.clear();
 }
 
 void SystemManager_::setBrightness(uint8_t val)
 {
     gfx.setContrast(val);
-    gfx.setPowerSave(val == 0);
+    if (val == 0)
+    {
+        gfx.displayOff();
+    }
+    else
+    {
+        gfx.displayOn();
+    };
+
     ButtonManager.setBrightness(val);
 }
 
@@ -442,14 +467,51 @@ void SystemManager_::ShowButtonScreen(uint8_t btn, const char *type)
     screen = 1;
 }
 
+void SystemManager_::ShowMessage(String msg)
+{
+    Message = msg;
+    previousMillis = millis();
+    screen = 2;
+}
+
+void SystemManager_::renderMessageScreen()
+{
+    static uint16_t start_at = 0;
+    gfx.clear();
+    gfx.setFont(ArialMT_Plain_24);
+    uint16_t firstline = gfx.drawStringMaxWidth(0, 0, 128, Message.substring(start_at));
+    gfx.display();
+
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    {
+        previousMillis = currentMillis;
+        if (firstline != 0)
+        {
+            start_at += firstline;
+        }
+        else
+        {
+            if (MessageShown)
+            {
+                start_at = 0;
+                screen = 0;
+                MessageShown = false;
+                return;
+            }
+            MessageShown = true;
+        }
+    }
+}
+
 void SystemManager_::renderButtonScreen()
 {
     if (!TypeShown)
     {
-        gfx.clearBuffer();
-        gfx.setFont(u8g2_font_inb24_mr);
-        gfx.drawStr((gfx.getDisplayWidth() - gfx.getUTF8Width(Pushtype)) / 2, 45, Pushtype);
-        gfx.sendBuffer();
+        gfx.clear();
+        gfx.setFont(Roboto_Black_36);
+        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(Pushtype)) / 2, 15, Pushtype);
+        gfx.display();
         TypeShown = true;
     }
     unsigned long currentMillis = millis();
@@ -467,7 +529,8 @@ void SystemManager_::renderClockScreen()
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         getLocalTime(&timeinfo);
-        gfx.clearBuffer();
+        gfx.clear();
+
         previousMillis = currentMillis;
 
         weekDay = weekDays[timeinfo.tm_wday];
@@ -484,13 +547,12 @@ void SystemManager_::renderClockScreen()
         fYear = String(1900 + timeinfo.tm_year);
         fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
         fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
-        gfx.setFont(u8g2_font_inr16_mf);
-        gfx.drawStr(0, 16, fDate.c_str());
-        gfx.setFont(u8g2_font_pxplusibmcgathin_8f);
-        gfx.drawStr(93, 8, fYear.c_str());
-        gfx.drawStr(93, 17, weekDay.c_str());
-        gfx.setFont(u8g2_font_inb30_mn);
-        gfx.drawStr(2, 58, fTime.c_str());
-        gfx.sendBuffer();
+        gfx.setFont(ArialMT_Plain_16);
+        gfx.drawString(0, 0, fDate);
+        gfx.setFont(ArialMT_Plain_16);
+        gfx.drawString(95, 0, weekDay);
+        gfx.setFont(DSEG14_Modern_Mini_Regular_30);
+        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(fTime)) / 2, 25, fTime);
+        gfx.display();
     }
 }
