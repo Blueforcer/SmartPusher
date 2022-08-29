@@ -10,6 +10,7 @@
 #include "font.h"
 #include "images.h"
 #include "SPI.h"
+#include <SPIFFS.h>
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
@@ -29,6 +30,7 @@ const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
 String Message;
+String Image;
 
 uint8_t BtnNr;
 boolean TypeShown;
@@ -37,6 +39,9 @@ String weekDay;
 String fYear;
 String fDate;
 String fTime;
+
+File fsUploadFile;
+String temp = "";
 
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 bool colon_switch = true;
@@ -234,6 +239,22 @@ boolean initWiFi()
     return connected;
 }
 
+String formatBytes(size_t bytes)
+{ // lesbare Anzeige der Speichergrößen
+    if (bytes < 1024)
+    {
+        return String(bytes) + " Byte";
+    }
+    else if (bytes < (1024 * 1024))
+    {
+        return String(bytes / 1024.0) + " KB";
+    }
+    else if (bytes < (1024 * 1024 * 1024))
+    {
+        return String(bytes / 1024.0 / 1024.0) + " MB";
+    }
+}
+
 void handleRoot()
 {
     conf.handleFormRequest(&server);
@@ -247,6 +268,133 @@ void handleRoot()
             Serial.print(" = ");
             Serial.println(conf.values[i]);
         }
+    }
+}
+
+void handleDisplayFS()
+{ // HTML Filesystem
+    //  Page: /filesystem
+    temp = "";
+    // HTML Header
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    server.sendHeader("Pragma", "no-cache");
+    server.sendHeader("Expires", "-1");
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    // HTML Content
+    server.send(200, "text/html", temp);
+    temp += "<!DOCTYPE HTML><html lang='de'><head><meta charset='UTF-8'><meta name= viewport content='width=device-width, initial-scale=1.0,'>";
+    server.sendContent(temp);
+    temp = "";
+    temp += "<style type='text/css'><!-- DIV.container { min-height: 10em; display: table-cell; vertical-align: middle }.button {height:35px; width:90px; font-size:16px}";
+    server.sendContent(temp);
+    temp = "";
+    temp += "body {background-color: powderblue;}</style><head><title>File System Manager</title></head>";
+    temp += "<h2>Serial Peripheral Interface Flash Filesystem</h2><body><left>";
+    server.sendContent(temp);
+    temp = "";
+    if (server.args() > 0) // Parameter wurden ubergeben
+    {
+        if (server.hasArg("delete"))
+        {
+            String FToDel = server.arg("delete");
+            if (SPIFFS.exists(FToDel))
+            {
+                SPIFFS.remove(FToDel);
+                temp += "File " + FToDel + " successfully deleted.";
+            }
+            else
+            {
+                temp += "File " + FToDel + " cannot be deleted.";
+            }
+            server.sendContent(temp);
+            temp = "";
+        }
+        if (server.hasArg("format") and server.arg("on"))
+        {
+            SPIFFS.format();
+            temp += "SPI File System successfully formatted.";
+            server.sendContent(temp);
+            temp = "";
+        } //   server.client().stop(); // Stop is needed because we sent no content length
+    }
+
+    temp += "<table border=2 bgcolor = white width = 400 ><td><h4>Current SPIFFS Status: </h4>";
+    temp += formatBytes(SPIFFS.usedBytes() * 1.05) + " of " + formatBytes(SPIFFS.totalBytes()) + " used. <br>";
+    temp += formatBytes((SPIFFS.totalBytes() - (SPIFFS.usedBytes() * 1.05))) + " free. <br>";
+    temp += "</td></table><br>";
+    server.sendContent(temp);
+    temp = "";
+    // Check for Site Parameters
+
+    temp += "<table border=2 bgcolor = white width = 400><tr><th><br>";
+    temp += "<h4>Available Files on SPIFFS:</h4><table border=2 bgcolor = white ></tr></th><td>Filename</td><td>Size</td><td>Action </td></tr></th>";
+    server.sendContent(temp);
+    temp = "";
+    File root = SPIFFS.open("/");
+    File file = root.openNextFile();
+    while (file)
+    {
+        temp += "<td> <a title=\"Download\" href =\"" + String(file.name()) + "\" download=\"" + String(file.name()) + "\">" + String(file.name()) + "</a> <br></th>";
+        temp += "<td>" + formatBytes(file.size()) + "</td>";
+        temp += "<td><a href =filesystem?delete=" + String(file.name()) + "> Delete </a></td>";
+        temp += "</tr></th>";
+        file = root.openNextFile();
+    }
+
+    temp += "</tr></th>";
+    temp += "</td></tr></th><br></th></tr></table></table><br>";
+    temp += "<table border=2 bgcolor = white width = 400 ><td><h4>Upload</h4>";
+
+    temp += "<label> Choose File: </label>";
+    temp += "<form method='POST' action='/upload' enctype='multipart/form-data' style='height:35px;'><input type='file' name='upload' style='height:35px; font-size:13px;' required>\r\n<input type='submit' value='Upload' class='button'></form>";
+    temp += " </table><br>";
+    server.sendContent(temp);
+    temp = "";
+    temp += "<td><a href =filesystem?format=on> Format SPIFFS Filesystem. (Takes up to 30 Seconds) </a></td>";
+    temp += "<table border=2 bgcolor = white width = 500 cellpadding =5 ><caption><p><h3>Systemlinks:</h2></p></caption><tr><th><br>";
+    temp += " <a href='/'>Main Page</a><br><br></th></tr></table><br><br>";
+    server.sendContent(temp);
+    temp = "";
+    temp += "<footer><p>Programmed and designed by: Tobias Kuch</p><p>Contact information: <a href='mailto:tobias.kuch@googlemail.com'>tobias.kuch@googlemail.com</a>.</p></footer></body></html>";
+    // server.send ( 200, "", temp );
+    server.sendContent(temp);
+    server.client().stop(); // Stop is needed because we sent no content length
+    temp = "";
+}
+
+void handleFileUpload()
+{ // Dateien ins SPIFFS schreiben
+    if (server.uri() != "/upload")
+        return;
+    HTTPUpload &upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START)
+    {
+        String filename = upload.filename;
+        if (upload.filename.length() > 30)
+        {
+            upload.filename = upload.filename.substring(upload.filename.length() - 30, upload.filename.length()); // Dateinamen auf 30 Zeichen kürzen
+        }
+        Serial.println("FileUpload Name: " + upload.filename);
+        if (!filename.startsWith("/"))
+            filename = "/" + filename;
+        // fsUploadFile = SPIFFS.open(filename, "w");
+        fsUploadFile = SPIFFS.open("/" + server.urlDecode(upload.filename), "w");
+        filename = String();
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE)
+    {
+        //  Serial.print("handleFileUpload Data: "); Serial.println(upload.currentSize);
+        if (fsUploadFile)
+            fsUploadFile.write(upload.buf, upload.currentSize);
+    }
+    else if (upload.status == UPLOAD_FILE_END)
+    {
+        if (fsUploadFile)
+            fsUploadFile.close();
+
+        //  Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
+        // server.sendContent(Header);
+        handleDisplayFS();
     }
 }
 
@@ -320,6 +468,7 @@ void SystemManager_::setup()
     initWiFi();
     Update.onProgress(update_progress);
     server.on("/", handleRoot);
+    server.on("/files", HTTP_GET, handleDisplayFS);
     server.on("/update", HTTP_GET, []()
               {
     server.sendHeader("Connection", "close");
@@ -405,6 +554,9 @@ void SystemManager_::tick()
     case 2:
         renderMessageScreen();
         break;
+    case 3:
+        renderImageScreen();
+        break;
     default:
         break;
     }
@@ -474,6 +626,13 @@ void SystemManager_::ShowMessage(String msg)
     screen = 2;
 }
 
+void SystemManager_::ShowImage(String img)
+{
+    Image = img;
+    previousMillis = millis();
+    screen = 3;
+}
+
 void SystemManager_::renderMessageScreen()
 {
     static uint16_t start_at = 0;
@@ -523,6 +682,33 @@ void SystemManager_::renderButtonScreen()
     }
 }
 
+void SystemManager_::renderImageScreen()
+{
+    File f = SPIFFS.open("/" + Image + ".mono", "r");
+    if (f)
+    {
+        int s = f.size();
+        Serial.printf("File Opened , Size=%d\r\n", s);
+        String data = f.readString();
+        uint8_t data1[data.length()];
+        data.getBytes(data1, data.length());
+        f.close();
+        gfx.drawXbm(0, 0, 128, 64, data1);
+        gfx.display();
+    }
+    else
+    {
+        Serial.println("File Not Opened");
+    }
+
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    {
+        previousMillis = currentMillis;
+        screen = 0;
+    }
+}
+
 void SystemManager_::renderClockScreen()
 {
     unsigned long currentMillis = millis();
@@ -532,7 +718,6 @@ void SystemManager_::renderClockScreen()
         gfx.clear();
 
         previousMillis = currentMillis;
-
         weekDay = weekDays[timeinfo.tm_wday];
 
         if (conf.getBool("colonblink"))
