@@ -13,7 +13,7 @@
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.5";
+const char *VERSION = "1.6";
 
 // U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -223,12 +223,12 @@ boolean initWiFi()
     }
     if (!connected)
     {
-        gfx.setFont(ArialMT_Plain_24);
+        gfx.setFont(ArialMT_Plain_16);
         WiFi.mode(WIFI_AP);
         WiFi.softAP("SmartPusher", "", 1);
         gfx.clear();
-        gfx.drawString(15, 15, "AP MODE");
-        gfx.drawString(10, 30, "192.168.1.4");
+        gfx.drawString(25, 15, "AP MODE");
+        gfx.drawString(20, 35, "192.168.1.4");
         gfx.display();
     }
     return connected;
@@ -314,6 +314,7 @@ void SystemManager_::setup()
     gfx.display();
     delay(800);
     conf.registerOnSave(SettingsSaved);
+
     conf.setDescription(params);
     conf.readConfig();
     gfx.clear();
@@ -379,7 +380,7 @@ void SystemManager_::setup()
     if (connected)
     {
         char dns[30];
-        sprintf(dns, "%s.local", conf.getApName());
+        sprintf(dns, "%s.local", conf.getString("mqttprefix"));
         if (MDNS.begin(dns))
         {
             Serial.println("MDNS responder gestartet");
@@ -393,20 +394,22 @@ void SystemManager_::setup()
 void SystemManager_::tick()
 {
     server.handleClient();
-
-    switch (screen)
+    if (connected)
     {
-    case 0:
-        renderClockScreen();
-        break;
-    case 1:
-        renderButtonScreen();
-        break;
-    case 2:
-        renderMessageScreen();
-        break;
-    default:
-        break;
+        switch (screen)
+        {
+        case 0:
+            renderClockScreen();
+            break;
+        case 1:
+            renderButtonScreen();
+            break;
+        case 2:
+            renderMessageScreen();
+            break;
+        default:
+            break;
+        }
     }
 }
 
