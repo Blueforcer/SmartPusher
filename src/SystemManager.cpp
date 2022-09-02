@@ -35,6 +35,7 @@ String Image;
 uint8_t BtnNr;
 boolean TypeShown;
 boolean MessageShown;
+boolean ImageShown;
 String weekDay;
 String fYear;
 String fDate;
@@ -183,7 +184,8 @@ String params = "["
                                       "{'v':'0','l':'Off'},"
                                       "{'v':'1','l':'On'},"
                                       "{'v':'2','l':'Fade'},"
-                                      "{'v':'3','l':'Extern'}],"
+                                      "{'v':'3','l':'Extern'},"
+                                      "{'v':'4','l':'OnPush'}],"
                                       "'default':'1'"
                                       "}"
                                       "]";
@@ -336,7 +338,7 @@ void handleDisplayFS()
     {
         temp += "<td> <a title=\"Download\" href =\"" + String(file.name()) + "\" download=\"" + String(file.name()) + "\">" + String(file.name()) + "</a> <br></th>";
         temp += "<td>" + formatBytes(file.size()) + "</td>";
-        temp += "<td><a href =filesystem?delete=" + String(file.name()) + "> Delete </a></td>";
+        temp += "<td><a href =files?delete=" + String(file.name()) + "> Delete </a></td>";
         temp += "</tr></th>";
         file = root.openNextFile();
     }
@@ -350,7 +352,7 @@ void handleDisplayFS()
     temp += " </table><br>";
     server.sendContent(temp);
     temp = "";
-    temp += "<td><a href =filesystem?format=on> Format SPIFFS Filesystem. (Takes up to 30 Seconds) </a></td>";
+    temp += "<td><a href =files?format=on> Format SPIFFS Filesystem. (Takes up to 30 Seconds) </a></td>";
     temp += "<table border=2 bgcolor = white width = 500 cellpadding =5 ><caption><p><h3>Systemlinks:</h2></p></caption><tr><th><br>";
     temp += " <a href='/'>Main Page</a><br><br></th></tr></table><br><br>";
     server.sendContent(temp);
@@ -364,6 +366,7 @@ void handleDisplayFS()
 
 void handleFileUpload()
 { // Dateien ins SPIFFS schreiben
+    Serial.println("FileUpload Name:");
     if (server.uri() != "/upload")
         return;
     HTTPUpload &upload = server.upload();
@@ -469,10 +472,15 @@ void SystemManager_::setup()
     initWiFi();
     Update.onProgress(update_progress);
     server.on("/", handleRoot);
+    server.on(
+        "/upload", HTTP_POST, []()
+        { server.send(200, "text/plain", ""); },
+        handleFileUpload);
     server.on("/files", HTTP_GET, handleDisplayFS);
     server.on("/update", HTTP_GET, []()
               {
     server.sendHeader("Connection", "close");
+
     server.send(200, "text/html", updateIndex); });
     server.on(
         "/doupdate", HTTP_POST, []()
@@ -545,7 +553,6 @@ void SystemManager_::tick()
     server.handleClient();
     if (connected)
     {
-<<<<<<< HEAD
         switch (screen)
         {
         case 0:
@@ -557,25 +564,12 @@ void SystemManager_::tick()
         case 2:
             renderMessageScreen();
             break;
+        case 3:
+            renderImageScreen();
+            break;
         default:
             break;
         }
-=======
-    case 0:
-        renderClockScreen();
-        break;
-    case 1:
-        renderButtonScreen();
-        break;
-    case 2:
-        renderMessageScreen();
-        break;
-    case 3:
-        renderImageScreen();
-        break;
-    default:
-        break;
->>>>>>> f786b3b481e9a16adab0bfb7a69863e366aadba0
     }
 }
 
@@ -701,28 +695,61 @@ void SystemManager_::renderButtonScreen()
 
 void SystemManager_::renderImageScreen()
 {
-    File f = SPIFFS.open("/" + Image + ".mono", "r");
-    if (f)
+    gfx.clear();
+    uint8_t w;
+    uint8_t h;
+    uint8_t x = 0;
+    uint8_t y = 0;
+    uint8_t b;
+    uint8_t mask;
+    uint8_t len;
+    uint8_t xpos;
+    File myFile = SPIFFS.open("/" + Image, "r");
+    if (myFile)
     {
-        int s = f.size();
-        Serial.printf("File Opened , Size=%d\r\n", s);
-        String data = f.readString();
-        uint8_t data1[data.length()];
-        data.getBytes(data1, data.length());
-        f.close();
-        gfx.drawXbm(0, 0, 128, 64, data1);
-        gfx.display();
+        w = 128; // read the dimension of the bitmap
+        h = 64;
+        while (h > 0)
+        { // handle all lines of the bitmap
+            xpos = x;
+            len = w; // len will contain the horizontal number of pixel
+            mask = 1;
+            b = myFile.read(); // load the first 8 pixel into "b"
+            while (len > 0)
+            { // draw all pixel of one line
+                if (b & mask)
+                { // check one pixel
+                    gfx.setPixelColor(xpos, y,BLACK);
+                   
+                }
+                else
+                {
+                    gfx.setPixelColor(xpos, y,WHITE);
+                   
+                }
+                xpos++;     // calculate next x pos of the pixel
+                mask <<= 1; // update the mask
+                if (mask == 0)
+                {
+                    mask = 1;          // revert mask and ...
+                    b = myFile.read(); // ... load the next 8 pixel values from the file
+                }
+                len--; // decrease the horizontal width (remaining pixel)
+            }
+            y++; // goto next line
+            h--; // decrease the number of remaining lines
+        }
+        myFile.close(); // all done, close the file
     }
-    else
-    {
-        Serial.println("File Not Opened");
-    }
+    gfx.display();
+
 
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
         previousMillis = currentMillis;
         screen = 0;
+        ImageShown = false;
     }
 }
 

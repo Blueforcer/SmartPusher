@@ -55,23 +55,6 @@ void ButtonManager_::tick()
 
     // Check if the menu buttons are being pressed. If so, show menu
     checkButtons();
-
-    if (ResetLights)
-    {
-        unsigned long currentMillis = millis();
-        for (uint8_t i = 0; i < 8; i++)
-        {
-            if (leds[i].IsRunning())
-                return;
-        }
-
-        if (currentMillis - prevMillis >= 2000)
-        {
-            prevMillis = currentMillis;
-            setStates();
-            ResetLights = false;
-        }
-    }
 }
 
 AceButton *ButtonManager_::getButton(uint8_t index)
@@ -133,7 +116,7 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 {
     int ledtype = SystemManager.getInt("leds");
-    if (ledtype = 3)
+    if (ledtype != 4)
         return;
     int count = 1;
     switch (type)
@@ -176,7 +159,6 @@ void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
         }
         break;
     }
-    ResetLights = true;
     prevMillis = 0;
 }
 
@@ -349,19 +331,22 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
         }
         break;
     default:
-        break;
+        leds[btn].Off(1000);
     }
 }
 
 void ButtonManager_::setStates()
 {
     int ledtype = SystemManager.getInt("leds");
-    setButtonLight(0, ledtype);
-    setButtonLight(1, ledtype);
-    setButtonLight(2, ledtype);
-    setButtonLight(3, ledtype);
-    setButtonLight(4, ledtype);
-    setButtonLight(5, ledtype);
-    setButtonLight(6, ledtype);
-    setButtonLight(7, ledtype);
+    if (ledtype != 4)
+    {
+        setButtonLight(0, ledtype);
+        setButtonLight(1, ledtype);
+        setButtonLight(2, ledtype);
+        setButtonLight(3, ledtype);
+        setButtonLight(4, ledtype);
+        setButtonLight(5, ledtype);
+        setButtonLight(6, ledtype);
+        setButtonLight(7, ledtype);
+    }
 }

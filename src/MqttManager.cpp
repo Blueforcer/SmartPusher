@@ -70,6 +70,10 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
         SystemManager.ShowMessage(strPayload);
     }
+        if (strTopic == SystemManager.getValue("mqttprefix") + String("/image"))
+    {
+        SystemManager.ShowImage(strPayload);
+    }
 }
 
 long lastReconnectAttempt = 0;
@@ -88,6 +92,7 @@ boolean reconnect()
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
         client.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
+         client.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str());
 
         for (int i = 1; i < 9; i++)
         {
