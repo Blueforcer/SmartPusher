@@ -14,7 +14,7 @@
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.6";
+const char *VERSION = "1.7";
 
 // U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -26,6 +26,7 @@ uint8_t screen = 0;
 boolean connected = false;
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
+const long PICTURE_INTERVAL = 2000;
 const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
@@ -257,6 +258,113 @@ String formatBytes(size_t bytes)
     }
 }
 
+String getContentType(String filename)
+{ // convert the file extension to the MIME type
+    if (filename.endsWith(".htm"))
+        return "text/html";
+    else if (filename.endsWith(".css"))
+        return "text/css";
+    else if (filename.endsWith(".js"))
+        return "application/javascript";
+    else if (filename.endsWith(".ico"))
+        return "image/x-icon";
+    else if (filename.endsWith(".gz"))
+        return "application/x-gzip";
+    else if (filename.endsWith(".bmp"))
+        return "image/bmp";
+    else if (filename.endsWith(".tif"))
+        return "image/tiff";
+    else if (filename.endsWith(".pbm"))
+        return "image/x-portable-bitmap";
+    else if (filename.endsWith(".jpg"))
+        return "image/jpeg";
+    else if (filename.endsWith(".gif"))
+        return "image/gif";
+    else if (filename.endsWith(".png"))
+        return "image/png";
+    else if (filename.endsWith(".svg"))
+        return "image/svg+xml";
+    else if (filename.endsWith(".html"))
+        return "text/html";
+    else if (filename.endsWith(".wav"))
+        return "audio/x-wav";
+    else if (filename.endsWith(".zip"))
+        return "application/zip";
+    else if (filename.endsWith(".rgb"))
+        return "image/x-rg";
+    else if (filename.endsWith(".bin"))
+        return "application/octet-stream";
+    // Complete List on https://wiki.selfhtml.org/wiki/MIME-Type/Übersicht
+    return "text/plain";
+}
+
+bool handleFileRead(String path)
+{ // send the right file to the client (if it exists)
+    Serial.println("handleFileRead: " + path);
+    if (path.endsWith("/"))
+        path += "index.html";                  // If a folder is requested, send the index file
+    String contentType = getContentType(path); // Get the MIME type
+    String pathWithGz = path + ".gz";
+    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path))
+    {                                                       // If the file exists, either as a compressed archive, or normal
+        if (SPIFFS.exists(pathWithGz))                      // If there's a compressed version available
+            path += ".gz";                                  // Use the compressed verion
+        File file = SPIFFS.open(path, "r");                 // Open the file
+        size_t sent = server.streamFile(file, contentType); // Send it to the client
+        file.close();                                       // Close the file again
+        return true;
+    }
+    return false;
+}
+
+void handleNotFound()
+{
+    if (!handleFileRead(server.uri()))
+    {
+        temp = "";
+        // HTML Header
+        server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        server.sendHeader("Pragma", "no-cache");
+        server.sendHeader("Expires", "-1");
+        server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+        // HTML Content
+        temp += "<!DOCTYPE HTML><html lang='de'><head><meta charset='UTF-8'><meta name= viewport content='width=device-width, initial-scale=1.0,'>";
+        temp += "<style type='text/css'><!-- DIV.container { min-height: 10em; display: table-cell; vertical-align: middle }.button {height:35px; width:90px; font-size:16px}";
+        temp += "body {background-color: powderblue;}</style>";
+        temp += "<head><title>File not found</title></head>";
+        temp += "<h2> 404 File Not Found</h2><br>";
+        temp += "<h4>Debug Information:</h4><br>";
+        temp += "<body>";
+        temp += "URI: ";
+        temp += server.uri();
+        temp += "\nMethod: ";
+        temp += (server.method() == HTTP_GET) ? "GET" : "POST";
+        temp += "<br>Arguments: ";
+        temp += server.args();
+        temp += "\n";
+        for (uint8_t i = 0; i < server.args(); i++)
+        {
+            temp += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+        }
+        temp += "<br>Server Hostheader: " + server.hostHeader();
+        for (uint8_t i = 0; i < server.headers(); i++)
+        {
+            temp += " " + server.headerName(i) + ": " + server.header(i) + "\n<br>";
+        }
+        temp += "</table></form><br><br><table border=2 bgcolor = white width = 500 cellpadding =5 ><caption><p><h2>You may want to browse to:</h2></p></caption>";
+        temp += "<tr><th>";
+        temp += "<a href='/'>Main Page</a><br>";
+        temp += "<a href='/wifi'>WIFI Settings</a><br>";
+        temp += "<a href='/filesystem'>Filemanager</a><br>";
+        temp += "</th></tr></table><br><br>";
+        temp += "<footer><p>Programmed and designed by: Tobias Kuch</p><p>Contact information: <a href='mailto:tobias.kuch@googlemail.com'>tobias.kuch@googlemail.com</a>.</p></footer>";
+        temp += "</body></html>";
+        server.send(404, "", temp);
+        server.client().stop(); // Stop is needed because we sent no content length
+        temp = "";
+    }
+}
+
 void handleRoot()
 {
     conf.handleFormRequest(&server);
@@ -290,8 +398,8 @@ void handleDisplayFS()
     temp += "<style type='text/css'><!-- DIV.container { min-height: 10em; display: table-cell; vertical-align: middle }.button {height:35px; width:90px; font-size:16px}";
     server.sendContent(temp);
     temp = "";
-    temp += "body {background-color: powderblue;}</style><head><title>File System Manager</title></head>";
-    temp += "<h2>Serial Peripheral Interface Flash Filesystem</h2><body><left>";
+    temp += "body {background-color: black; Color: #fff;}</style><head><title>File System Manager</title></head>";
+    temp += "<h2>File Uploader</h2><body><left>";
     server.sendContent(temp);
     temp = "";
     if (server.args() > 0) // Parameter wurden ubergeben
@@ -320,16 +428,13 @@ void handleDisplayFS()
         } //   server.client().stop(); // Stop is needed because we sent no content length
     }
 
-    temp += "<table border=2 bgcolor = white width = 400 ><td><h4>Current SPIFFS Status: </h4>";
     temp += formatBytes(SPIFFS.usedBytes() * 1.05) + " of " + formatBytes(SPIFFS.totalBytes()) + " used. <br>";
     temp += formatBytes((SPIFFS.totalBytes() - (SPIFFS.usedBytes() * 1.05))) + " free. <br>";
-    temp += "</td></table><br>";
+    temp += "<br>";
     server.sendContent(temp);
     temp = "";
     // Check for Site Parameters
-
-    temp += "<table border=2 bgcolor = white width = 400><tr><th><br>";
-    temp += "<h4>Available Files on SPIFFS:</h4><table border=2 bgcolor = white ></tr></th><td>Filename</td><td>Size</td><td>Action </td></tr></th>";
+    temp += "<h4>Available Files on SPIFFS:</h4><table border=2 bgcolor = black ></tr></th><td>Filename</td><td>Size</td><td>Action </td></tr></th>";
     server.sendContent(temp);
     temp = "";
     File root = SPIFFS.open("/");
@@ -344,20 +449,17 @@ void handleDisplayFS()
     }
 
     temp += "</tr></th>";
-    temp += "</td></tr></th><br></th></tr></table></table><br>";
-    temp += "<table border=2 bgcolor = white width = 400 ><td><h4>Upload</h4>";
-
-    temp += "<label> Choose File: </label>";
+    temp += "</td></tr></th><br></th></tr></table><br>";
+    temp += "<h4> Choose File: </h4>";
     temp += "<form method='POST' action='/upload' enctype='multipart/form-data' style='height:35px;'><input type='file' name='upload' style='height:35px; font-size:13px;' required>\r\n<input type='submit' value='Upload' class='button'></form>";
-    temp += " </table><br>";
+    temp += " <br>";
     server.sendContent(temp);
     temp = "";
-    temp += "<td><a href =files?format=on> Format SPIFFS Filesystem. (Takes up to 30 Seconds) </a></td>";
-    temp += "<table border=2 bgcolor = white width = 500 cellpadding =5 ><caption><p><h3>Systemlinks:</h2></p></caption><tr><th><br>";
-    temp += " <a href='/'>Main Page</a><br><br></th></tr></table><br><br>";
+    temp += "<br>";
+    temp += " <a href='/'>Back</a><br><br><br><br>";
     server.sendContent(temp);
     temp = "";
-    temp += "<footer><p>Programmed and designed by: Tobias Kuch</p><p>Contact information: <a href='mailto:tobias.kuch@googlemail.com'>tobias.kuch@googlemail.com</a>.</p></footer></body></html>";
+    temp += "</body></html>";
     // server.send ( 200, "", temp );
     server.sendContent(temp);
     server.client().stop(); // Stop is needed because we sent no content length
@@ -471,6 +573,7 @@ void SystemManager_::setup()
     gfx.clear();
     initWiFi();
     Update.onProgress(update_progress);
+    server.onNotFound(handleNotFound);
     server.on("/", handleRoot);
     server.on(
         "/upload", HTTP_POST, []()
@@ -487,6 +590,7 @@ void SystemManager_::setup()
         {
     server.sendHeader("Connection", "close");
     server.send(200, "text/plain", (Update.hasError()) ? "NOK" : "OK");
+  
     delay(1000);
     ESP.restart(); },
         []()
@@ -696,56 +800,53 @@ void SystemManager_::renderButtonScreen()
 void SystemManager_::renderImageScreen()
 {
     gfx.clear();
-    uint8_t w;
     uint8_t h;
-    uint8_t x = 0;
-    uint8_t y = 0;
-    uint8_t b;
-    uint8_t mask;
-    uint8_t len;
+    uint8_t w;
     uint8_t xpos;
-    File myFile = SPIFFS.open("/" + Image, "r");
-    if (myFile)
+    uint8_t b;
+    if (SPIFFS.exists("/" + Image))
     {
-        w = 128; // read the dimension of the bitmap
-        h = 64;
-        while (h > 0)
-        { // handle all lines of the bitmap
-            xpos = x;
-            len = w; // len will contain the horizontal number of pixel
-            mask = 1;
-            b = myFile.read(); // load the first 8 pixel into "b"
-            while (len > 0)
-            { // draw all pixel of one line
-                if (b & mask)
-                { // check one pixel
-                    gfx.setPixelColor(xpos, y,BLACK);
-                   
-                }
-                else
+        File myFile = SPIFFS.open("/" + Image, "r");
+        if (myFile)
+        {
+            w = myFile.read(); // read the dimension of the bitmap
+            h = myFile.read();
+            for (size_t y = 0; y < h; y++)
+            {
+                xpos = 0;
+                for (size_t i = 0; i < (w / 8); i++)
                 {
-                    gfx.setPixelColor(xpos, y,WHITE);
-                   
+                    {
+                        b = myFile.read();
+                        for (uint8_t bt = 0; bt < 8; bt++)
+                        {
+                            if (bitRead(b, bt))
+                            { // check one pixel
+                                gfx.setPixelColor(xpos, y, BLACK);
+                            }
+                            else
+                            {
+                                gfx.setPixelColor(xpos, y, WHITE);
+                            }
+                            xpos++;
+                        }
+                    }
                 }
-                xpos++;     // calculate next x pos of the pixel
-                mask <<= 1; // update the mask
-                if (mask == 0)
-                {
-                    mask = 1;          // revert mask and ...
-                    b = myFile.read(); // ... load the next 8 pixel values from the file
-                }
-                len--; // decrease the horizontal width (remaining pixel)
             }
-            y++; // goto next line
-            h--; // decrease the number of remaining lines
-        }
-        myFile.close(); // all done, close the file
-    }
-    gfx.display();
 
+            myFile.close(); // all done, close the file
+            gfx.display();
+        }
+    }
+    else
+    {
+        gfx.setFont(ArialMT_Plain_24);
+        gfx.drawString(10, 30, "NOT FOUND!");
+        gfx.display();
+    }
 
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    if (currentMillis - previousMillis >= PICTURE_INTERVAL)
     {
         previousMillis = currentMillis;
         screen = 0;
