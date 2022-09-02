@@ -840,8 +840,8 @@ void SystemManager_::renderImageScreen()
     }
     else
     {
-        gfx.setFont(ArialMT_Plain_24);
-        gfx.drawString(10, 30, "NOT FOUND!");
+        gfx.setFont(ArialMT_Plain_16);
+        gfx.drawString(14, 25, "NOT FOUND!");
         gfx.display();
     }
 
