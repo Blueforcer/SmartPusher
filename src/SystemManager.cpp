@@ -14,7 +14,7 @@
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.7";
+const char *VERSION = "1.8";
 
 // U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -822,11 +822,11 @@ void SystemManager_::renderImageScreen()
                         {
                             if (bitRead(b, bt))
                             { // check one pixel
-                                gfx.setPixelColor(xpos, y, BLACK);
+                                gfx.setPixelColor(xpos, y, WHITE);
                             }
                             else
                             {
-                                gfx.setPixelColor(xpos, y, WHITE);
+                                gfx.setPixelColor(xpos, y, BLACK);
                             }
                             xpos++;
                         }
