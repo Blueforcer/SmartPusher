@@ -191,6 +191,7 @@ boolean getPushSetting(uint8_t btn)
         return SystemManager.getBool("btn8push");
         break;
     default:
+        return false;
         break;
     }
 }
