@@ -242,6 +242,58 @@ boolean initWiFi()
     return connected;
 }
 
+
+// The getter for the instantiated singleton instance
+SystemManager_ &SystemManager_::getInstance()
+{
+    static SystemManager_ instance;
+    return instance;
+}
+
+// Initialize the global shared instance
+SystemManager_ &SystemManager = SystemManager.getInstance();
+
+void SettingsSaved(String result)
+{
+    ButtonManager.setStates();
+    return;
+}
+
+void update_started()
+{
+    Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished()
+{
+    Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total)
+{
+    static int last_percent = 0;
+    Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+
+    int percent = (100 * cur) / total;
+    Serial.println(percent);
+
+    gfx.display();
+    if (percent != last_percent)
+    {
+        uint8_t light = percent / 12.5;
+        ButtonManager.setButtonLight(light, 1);
+        ButtonManager.tick();
+        gfx.clear();
+        gfx.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
+        last_percent = percent;
+        gfx.display();
+    }
+}
+
+
+
+#ifndef Web
+
 String formatBytes(size_t bytes)
 { // lesbare Anzeige der Speichergrößen
     if (bytes < 1024)
@@ -502,53 +554,7 @@ void handleFileUpload()
         handleDisplayFS();
     }
 }
-
-// The getter for the instantiated singleton instance
-SystemManager_ &SystemManager_::getInstance()
-{
-    static SystemManager_ instance;
-    return instance;
-}
-
-// Initialize the global shared instance
-SystemManager_ &SystemManager = SystemManager.getInstance();
-
-void SettingsSaved(String result)
-{
-    ButtonManager.setStates();
-    return;
-}
-
-void update_started()
-{
-    Serial.println("CALLBACK:  HTTP update process started");
-}
-
-void update_finished()
-{
-    Serial.println("CALLBACK:  HTTP update process finished");
-}
-
-void update_progress(int cur, int total)
-{
-    static int last_percent = 0;
-    Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
-
-    int percent = (100 * cur) / total;
-    Serial.println(percent);
-
-    gfx.display();
-    if (percent != last_percent)
-    {
-        uint8_t light = percent / 12.5;
-        ButtonManager.setButtonLight(light, 1);
-        ButtonManager.tick();
-        gfx.clear();
-        gfx.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
-        last_percent = percent;
-        gfx.display();
-    }
-}
+#endif // end Webregion
 
 void SystemManager_::setup()
 {

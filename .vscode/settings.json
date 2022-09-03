@@ -15,6 +15,7 @@
         "initializer_list": "cpp",
         "new": "cpp",
         "random": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "algorithm": "cpp"
     }
 }
