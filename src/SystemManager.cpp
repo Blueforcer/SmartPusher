@@ -16,7 +16,7 @@
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 const char *VERSION = "1.8";
 
-// U8G2_SSD1306_128X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
+// U8G2_SSD1306_1 028X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
 
 const int daylightOffset_sec = 3600;
@@ -242,7 +242,6 @@ boolean initWiFi()
     return connected;
 }
 
-
 // The getter for the instantiated singleton instance
 SystemManager_ &SystemManager_::getInstance()
 {
@@ -289,8 +288,6 @@ void update_progress(int cur, int total)
         gfx.display();
     }
 }
-
-
 
 #ifndef Web
 
@@ -680,6 +677,10 @@ void SystemManager_::tick()
         default:
             break;
         }
+    }
+    else
+    {
+        delay(50);
     }
 }
 
