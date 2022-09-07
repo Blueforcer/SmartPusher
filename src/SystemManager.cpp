@@ -14,7 +14,7 @@
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.8";
+const char *VERSION = "1.9";
 
 // U8G2_SSD1306_1 028X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -811,9 +811,9 @@ void SystemManager_::renderImageScreen()
     uint8_t w;
     uint8_t xpos;
     uint8_t b;
-    if (SPIFFS.exists("/" + Image))
+    if (SPIFFS.exists("/" + Image + ".bin"))
     {
-        File myFile = SPIFFS.open("/" + Image, "r");
+        File myFile = SPIFFS.open("/" + Image + ".bin", "r");
         if (myFile)
         {
             w = myFile.read(); // read the dimension of the bitmap
