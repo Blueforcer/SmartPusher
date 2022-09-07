@@ -178,7 +178,7 @@ String params = "["
                                         "'default':'0'"
                                         "},{"
                                         "'name':'leds',"
-                                        "'label':'LEDS',"
+                                        "'label':'LED Mode',"
                                         "'type':" +
                 String(INPUTSELECT) + ","
                                       "'options':["
@@ -236,7 +236,7 @@ boolean initWiFi()
         WiFi.softAP("SmartPusher", "", 1);
         gfx.clear();
         gfx.drawString(25, 15, "AP MODE");
-        gfx.drawString(20, 35, "192.168.1.4");
+        gfx.drawString(20, 35, "192.168.4.1");
         gfx.display();
     }
     return connected;
