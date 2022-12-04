@@ -1,24 +1,13 @@
 #include <MqttManager.h>
-#include "EspMQTTClient.h"
+#include <PubSubClient.h>
 #include <config.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
-#include "HAMqttDevice.h"
 //#include "TinyMqtt.h"
 
 // MqttBroker broker(PORT);
 WiFiClient espClient;
-
-HAMqttDevice button1("button1", HAMqttDevice::BINARY_SENSOR);
-HAMqttDevice light("buttonLight1", HAMqttDevice::LIGHT);
-
-// MQTT client setup
-EspMQTTClient client(
-    SystemManager.getValue("mqttbroker"), // MQTT broker ip
-    SystemManager.getValue("mqttport"),   // MQTT Client name
-    SystemManager.getValue("mqttuser"),   // MQTT username
-    SystemManager.getValue("mqttpwd"),    // MQTT password
-    SystemManager.getValue("mqttprefix"));
+PubSubClient client(espClient);
 
 byte *buffer;
 boolean Rflag = false;
@@ -34,47 +23,96 @@ MqttManager_ &MqttManager_::getInstance()
 // Initialize the global shared instance
 MqttManager_ &MqttManager = MqttManager.getInstance();
 
-void onConnectionEstablished()
+void callback(char *topic, byte *payload, unsigned int length)
 {
+    payload[length] = '\0';
+    String strTopic = String(topic);
+    String strPayload = String((char *)payload);
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str(), [](const String &payload)
-                     { SystemManager.setBrightness(atoi(payload.c_str())); });
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/brightness"))
+    {
+        SystemManager.setBrightness(atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button1/state"))
+    {
+        ButtonManager.setButtonState(0, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button2/state"))
+    {
+        ButtonManager.setButtonState(1, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button3/state"))
+    {
+        ButtonManager.setButtonState(2, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button4/state"))
+    {
+        ButtonManager.setButtonState(3, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button5/state"))
+    {
+        ButtonManager.setButtonState(4, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button6/state"))
+    {
+        ButtonManager.setButtonState(5, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button7/state"))
+    {
+        ButtonManager.setButtonState(6, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button8/state"))
+    {
+        ButtonManager.setButtonState(7, atoi(strPayload.c_str()));
+    }
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/message"))
+    {
+        SystemManager.ShowMessage(strPayload);
+    }
+        if (strTopic == SystemManager.getValue("mqttprefix") + String("/image"))
+    {
+        SystemManager.ShowImage(strPayload);
+    }
+}
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button1/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(0, atoi(payload.c_str())); });
+long lastReconnectAttempt = 0;
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button2/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(1, atoi(payload.c_str())); });
+boolean reconnect()
+{
+    if (client.connect(SystemManager.getValue("mqttprefix"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd")))
+    {
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button1/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button2/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button3/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button4/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button5/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
+        client.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
+         client.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str());
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button3/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(2, atoi(payload.c_str())); });
+        for (int i = 1; i < 9; i++)
+        {
+            MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
+        }
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button4/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(3, atoi(payload.c_str())); });
+        Serial.println("MQTT Connected");
+    }
 
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button5/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(4, atoi(payload.c_str())); });
-
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(5, atoi(payload.c_str())); });
-
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(0, atoi(payload.c_str())); });
-
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str(), [](const String &payload)
-                     { ButtonManager.setButtonState(0, atoi(payload.c_str())); });
-
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str(), [](const String &payload)
-                     { SystemManager.ShowMessage(payload); });
-
-    client.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str(), [](const String &payload)
-                     { SystemManager.ShowImage(payload); });
+    return client.connected();
 }
 
 void MqttManager_::setup()
 {
-client.enableDebuggingMessages();
-    client.enableLastWillMessage("TestClient/lastwill", "I am going offline"); // You can activate the retain flag by setting the third parameter to true
+    uint16_t port = SystemManager.getInt("mqttport");
+    client.setServer(SystemManager.getValue("mqttbroker"), port);
+    client.setCallback(callback);
+    lastReconnectAttempt = 0;
 }
 
 void MqttManager_::tick()
@@ -82,7 +120,25 @@ void MqttManager_::tick()
     // if (menuInternalBroker.isActive()) broker.loop();
     if (WiFi.isConnected())
     {
-        client.loop();
+        if (!client.connected())
+        {
+            long now = millis();
+            if (now - lastReconnectAttempt > 5000)
+            {
+                lastReconnectAttempt = now;
+                Serial.println("Attempt to connect to MQTT");
+                // Attempt to reconnect
+                if (reconnect())
+                {
+                    lastReconnectAttempt = 0;
+                }
+            }
+        }
+        else
+        {
+            // Client connected
+            client.loop();
+        }
     }
 }
 
