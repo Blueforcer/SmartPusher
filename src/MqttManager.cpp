@@ -28,8 +28,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     payload[length] = '\0';
     String strTopic = String(topic);
     String strPayload = String((char *)payload);
-    Serial.println(strTopic);
-    Serial.println(strPayload);
+
     if (strTopic == SystemManager.getValue("mqttprefix") + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));

@@ -198,7 +198,7 @@ boolean getPushSetting(uint8_t btn)
 
 void ButtonManager_::handleSingleClick(uint8_t btn)
 {
-    Serial.println(getPushSetting(btn));
+
     if (!getPushSetting(btn))
     {
         SystemManager.ShowButtonScreen(btn, "Click");

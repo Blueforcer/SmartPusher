@@ -14,7 +14,7 @@
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.9";
+const char *VERSION = "1.92";
 
 // U8G2_SSD1306_1 028X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -24,10 +24,12 @@ tm timeinfo;
 
 uint8_t screen = 0;
 boolean connected = false;
+
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
 const long PICTURE_INTERVAL = 2000;
 const long CHECK_WIFI_TIME = 10000;
+unsigned long PREVIOUS_WIFI_CHECK = 0;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
 String Message;
@@ -194,10 +196,33 @@ String params = "["
 WebServer server;
 WebConfig conf;
 
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    Serial.println("Connected to AP successfully!");
+}
+
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+}
+
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    Serial.println("Disconnected from WiFi access point");
+    Serial.print("WiFi lost connection. Reason: ");
+    Serial.println("Trying to Reconnect");
+    WiFi.reconnect();
+}
+
 boolean initWiFi()
 {
 
     WiFi.mode(WIFI_STA);
+    WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::SYSTEM_EVENT_STA_CONNECTED);
+    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
+    WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
     Serial.print("Verbindung zu ");
     Serial.print(conf.values[0]);
     Serial.println(" herstellen");
@@ -218,6 +243,7 @@ boolean initWiFi()
         Serial.println();
         if (WiFi.status() == WL_CONNECTED)
         {
+
             gfx.setFont(ArialMT_Plain_16);
             Serial.print("IP-Adresse = ");
             Serial.println(WiFi.localIP());
@@ -419,14 +445,7 @@ void handleRoot()
     conf.handleFormRequest(&server);
     if (server.hasArg("SAVE"))
     {
-        uint8_t cnt = conf.getCount();
-        Serial.println("*********** Konfiguration ************");
-        for (uint8_t i = 0; i < cnt; i++)
-        {
-            Serial.print(conf.getName(i));
-            Serial.print(" = ");
-            Serial.println(conf.values[i]);
-        }
+
     }
 }
 
@@ -657,6 +676,7 @@ void SystemManager_::setup()
 
 void SystemManager_::tick()
 {
+
     server.handleClient();
     if (connected)
     {
