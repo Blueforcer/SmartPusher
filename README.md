@@ -5,8 +5,8 @@
 Bored with smartphones and voice control?  
 Go back to the roots with real buttons to control your smarthome!  
   
-SmartPusher is a wifi enabled button array wich lets you control your smarthome in different ways.
-Button functions:
+SmartPusher is a wifi enabled button array wich lets you control your smarthome via MQTT in different ways.  
+Functions:
 - Click
 - LongClick 
 - DoubleClick
