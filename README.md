@@ -5,8 +5,14 @@
 Bored with smartphones and voice control?  
 Go back to the roots with real buttons to control your smarthome!  
   
-SmartPusher is a wifi enabled button array wich lets you control your smarthome in different ways. Button funtions: Click, LongClick, DoubleClick, Down and Up.  
-With fancy light ring animations and a OLED screen  
+SmartPusher is a wifi enabled button array wich lets you control your smarthome in different ways.
+Button functions:
+- Click
+- LongClick 
+- DoubleClick
+- Down and Up
+- Fancy light ring animations 
+- OLED screen  
   
 **Wiki**  
 https://github.com/Blueforcer/SmartPusher/wiki
