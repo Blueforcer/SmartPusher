@@ -13,7 +13,9 @@ Functions:
 - Down and Up
 - Fancy light ring animations 
 - OLED screen  
-  
+    
+## HowTo
+
 **Wiki**  
 https://github.com/Blueforcer/SmartPusher/wiki
     
