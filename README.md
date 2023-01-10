@@ -23,4 +23,4 @@ Stephan Mühl, 2022
 
 [Creative Commons Attribution-NonCommercial-ShareAlike (CC-BY-NC-SA)](http://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-Free for personal use. Contact me in other cases (`ayufan@ayufan.eu`).
+Free for personal use. Contact me in other cases (`admin@blueforcer.de`).
