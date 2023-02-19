@@ -64,6 +64,8 @@ AceButton *ButtonManager_::getButton(uint8_t index)
 
 void ButtonManager_::setBrightness(uint8_t val)
 {
+  
+
     for (int i = 0; i < 8; i++)
     {
         leds[i].MaxBrightness(val);
@@ -248,24 +250,36 @@ void ButtonManager_::handleReleased(uint8_t btn)
     }
 }
 
+
+void serialOutput(uint8_t btn, uint8_t type) {
+  String Str = "SP"+String(btn) + String(type);
+  Serial.println(Str);
+}
+
 void ButtonManager_::SendState(int type, uint8_t btn)
 {
+    serialOutput(btn,type);
     switch (type)
     {
     case 1:
         MqttManager.publish(("button" + String(btn + 1) + "/click").c_str(), "true");
+        MqttManager.HAState(btn, "click");
         break;
     case 2:
         MqttManager.publish(("button" + String(btn + 1) + "/double_click").c_str(), "true");
+        MqttManager.HAState(btn, "double");
         break;
     case 3:
         MqttManager.publish(("button" + String(btn + 1) + "/long_click").c_str(), "true");
+        MqttManager.HAState(btn, "long");
         break;
     case 4:
         MqttManager.publish(("button" + String(btn + 1) + "/push").c_str(), "true");
+        MqttManager.HAState(btn, "down");
         break;
     case 5:
         MqttManager.publish(("button" + String(btn + 1) + "/push").c_str(), "false");
+        MqttManager.HAState(btn, "up");
         break;
     default:
         break;
@@ -274,6 +288,7 @@ void ButtonManager_::SendState(int type, uint8_t btn)
     if (type != 4 || type != 5)
     {
         delay(50);
+        MqttManager.HAState(btn, "-");
         switch (type)
         {
         case 1:
@@ -341,13 +356,10 @@ void ButtonManager_::setStates()
     int ledtype = SystemManager.getInt("leds");
     if (ledtype != 4)
     {
-        setButtonLight(0, ledtype);
-        setButtonLight(1, ledtype);
-        setButtonLight(2, ledtype);
-        setButtonLight(3, ledtype);
-        setButtonLight(4, ledtype);
-        setButtonLight(5, ledtype);
-        setButtonLight(6, ledtype);
-        setButtonLight(7, ledtype);
+
+        for (int i = 0; i <= 7; i++)
+        {
+            setButtonLight(i, ledtype);
+        }
     }
 }

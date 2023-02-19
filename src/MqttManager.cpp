@@ -3,15 +3,35 @@
 #include <config.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
-//#include "TinyMqtt.h"
+#include <ArduinoHA.h>
 
 // MqttBroker broker(PORT);
 WiFiClient espClient;
-PubSubClient client(espClient);
 
-byte *buffer;
-boolean Rflag = false;
-int r_len;
+byte mac[] = {0x00, 0x10, 0xFA, 0x6E, 0x38, 0x4A};
+
+HADevice device;
+HAMqtt mqtt(espClient, device, 18);
+
+HALight brightness("BRI", HALight::BrightnessFeature);
+
+HASwitch led1("LED1");
+HASwitch led2("LED2");
+HASwitch led3("LED3");
+HASwitch led4("LED4");
+HASwitch led5("LED5");
+HASwitch led6("LED6");
+HASwitch led7("LED7");
+HASwitch led8("LED8");
+
+HASensor btn1("BTN1");
+HASensor btn2("BTN2");
+HASensor btn3("BTN3");
+HASensor btn4("BTN4");
+HASensor btn5("BTN5");
+HASensor btn6("BTN6");
+HASensor btn7("BTN7");
+HASensor btn8("BTN8");
 
 // The getter for the instantiated singleton instance
 MqttManager_ &MqttManager_::getInstance()
@@ -23,123 +43,218 @@ MqttManager_ &MqttManager_::getInstance()
 // Initialize the global shared instance
 MqttManager_ &MqttManager = MqttManager.getInstance();
 
-void callback(char *topic, byte *payload, unsigned int length)
+void onBrightnessCommand(uint8_t brightness, HALight *sender)
 {
-    payload[length] = '\0';
+    SystemManager.setBrightness(brightness);
+    sender->setBrightness(brightness);
+}
+
+void onStateCommand(bool state, HALight *sender)
+{
+    SystemManager.BrightnessOnOff(state);
+    sender->setState(state);
+}
+
+void onSwitchCommand(bool state, HASwitch *sender)
+{
+    if (sender == &led1)
+    {
+        ButtonManager.setButtonState(0, state);
+    }
+    else if (sender == &led2)
+    {
+        ButtonManager.setButtonState(1, state);
+    }
+    else if (sender == &led3)
+    {
+        ButtonManager.setButtonState(2, state);
+    }
+    else if (sender == &led4)
+    {
+        ButtonManager.setButtonState(3, state);
+    }
+    else if (sender == &led5)
+    {
+        ButtonManager.setButtonState(4, state);
+    }
+    else if (sender == &led6)
+    {
+        ButtonManager.setButtonState(5, state);
+    }
+    else if (sender == &led7)
+    {
+        ButtonManager.setButtonState(6, state);
+    }
+    else if (sender == &led8)
+    {
+        ButtonManager.setButtonState(7, state);
+    }
+    sender->setState(state); // report state back to the Home Assistant
+}
+
+void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
+{
     String strTopic = String(topic);
     String strPayload = String((char *)payload);
 
     if (strTopic == SystemManager.getValue("mqttprefix") + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button1/state"))
-    {
-        ButtonManager.setButtonState(0, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button2/state"))
-    {
-        ButtonManager.setButtonState(1, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button3/state"))
-    {
-        ButtonManager.setButtonState(2, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button4/state"))
-    {
-        ButtonManager.setButtonState(3, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button5/state"))
-    {
-        ButtonManager.setButtonState(4, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button6/state"))
-    {
-        ButtonManager.setButtonState(5, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button7/state"))
-    {
-        ButtonManager.setButtonState(6, atoi(strPayload.c_str()));
-    }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/button8/state"))
-    {
-        ButtonManager.setButtonState(7, atoi(strPayload.c_str()));
+        return;
     }
     if (strTopic == SystemManager.getValue("mqttprefix") + String("/message"))
     {
         SystemManager.ShowMessage(strPayload);
+        return;
     }
-        if (strTopic == SystemManager.getValue("mqttprefix") + String("/image"))
+    if (strTopic == SystemManager.getValue("mqttprefix") + String("/image"))
     {
         SystemManager.ShowImage(strPayload);
+        return;
+    }
+    for (int i = 0; i < 8; i++)
+    {
+        if (strTopic == SystemManager.getValue("mqttprefix") + String("/button" + String(i + 1) + "/state"))
+        {
+            ButtonManager.setButtonState(i, atoi(strPayload.c_str()));
+            break;
+        }
     }
 }
 
 long lastReconnectAttempt = 0;
 
-boolean reconnect()
+void onMqttConnected()
 {
-    if (client.connect(SystemManager.getValue("mqttprefix"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd")))
+    String prefix = SystemManager.getValue("mqttprefix");
+    for (int i = 1; i <= 8; i++)
     {
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button1/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button2/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button3/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button4/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button5/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button6/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button7/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/button8/state")).c_str());
-        client.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
-         client.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str());
+        String topic = prefix + "/button" + String(i) + "/state";
+        mqtt.subscribe(topic.c_str());
+    }
+    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
+    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
+    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str());
 
-        for (int i = 1; i < 9; i++)
-        {
-            MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
-            MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
-            MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
-            MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
-        }
-
-        Serial.println("MQTT Connected");
+    for (int i = 1; i < 9; i++)
+    {
+        MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
+        MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
+        MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
+        MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
     }
 
-    return client.connected();
+    Serial.println("MQTT Connected");
+}
+
+void connect()
+{
+    mqtt.onMessage(onMqttMessage);
+    mqtt.onConnected(onMqttConnected);
+    if (SystemManager.getValue("mqttuser") == "" || SystemManager.getValue("mqttpwd") == "")
+    {
+
+        mqtt.begin(SystemManager.getValue("mqttbroker"), SystemManager.getInt("mqttport"), nullptr, nullptr);
+    }
+    else
+    {
+        mqtt.begin(SystemManager.getValue("mqttbroker"), SystemManager.getInt("mqttport"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd"));
+    }
 }
 
 void MqttManager_::setup()
 {
-    uint16_t port = SystemManager.getInt("mqttport");
-    client.setServer(SystemManager.getValue("mqttbroker"), port);
-    client.setCallback(callback);
+
+    byte mac[6];
+    WiFi.macAddress(mac);
+    device.setUniqueId(mac, sizeof(mac));
+    device.setName("SmartPusher");
+    device.setSoftwareVersion(SystemManager.VERSION);
+    device.setManufacturer("Blueforcer");
+    device.setModel("8 Button Array");
+
+    brightness.setIcon("mdi:lightbulb");
+    brightness.setName("Brightness");
+    brightness.onStateCommand(onStateCommand);
+    brightness.onBrightnessCommand(onBrightnessCommand); // optional
+    brightness.setCurrentState(true);
+
+    led1.onCommand(onSwitchCommand);
+    led1.setIcon("mdi:led-on");
+    led1.setName("LED 1");
+
+    led2.onCommand(onSwitchCommand);
+    led2.setIcon("mdi:led-on");
+    led2.setName("LED 2");
+
+    led3.onCommand(onSwitchCommand);
+    led3.setIcon("mdi:led-on");
+    led3.setName("LED 3");
+
+    led4.onCommand(onSwitchCommand);
+    led4.setIcon("mdi:led-on");
+    led4.setName("LED 4");
+
+    led5.onCommand(onSwitchCommand);
+    led5.setIcon("mdi:led-on");
+    led5.setName("LED 5");
+
+    led6.onCommand(onSwitchCommand);
+    led6.setIcon("mdi:led-on");
+    led6.setName("LED 6");
+
+    led7.onCommand(onSwitchCommand);
+    led7.setIcon("mdi:led-on");
+    led7.setName("LED 7");
+
+    led8.onCommand(onSwitchCommand);
+    led8.setIcon("mdi:led-on");
+    led8.setName("LED 8");
+
+    led8.onCommand(onSwitchCommand);
+    led8.setIcon("mdi:led-on");
+    led8.setName("LED 8");
+
+    btn1.setIcon("mdi:radiobox-marked");
+    btn1.setName("Button 1");
+    btn1.setValue("-");
+
+    btn2.setIcon("mdi:radiobox-marked");
+    btn2.setName("Button 2");
+    btn2.setValue("-");
+
+    btn3.setIcon("mdi:radiobox-marked");
+    btn3.setName("Button 3");
+    btn3.setValue("-");
+
+    btn4.setIcon("mdi:radiobox-marked");
+    btn4.setName("Button 4");
+    btn4.setValue("-");
+
+    btn5.setIcon("mdi:radiobox-marked");
+    btn5.setName("Button 5");
+    btn5.setValue("-");
+
+    btn6.setIcon("mdi:radiobox-marked");
+    btn6.setName("Button 6");
+    btn6.setValue("-");
+
+    btn7.setIcon("mdi:radiobox-marked");
+    btn7.setName("Button 7");
+    btn7.setValue("-");
+
+    btn8.setIcon("mdi:radiobox-marked");
+    btn8.setName("Button 8");
+    btn8.setValue("-");
+
     lastReconnectAttempt = 0;
+    connect();
 }
 
 void MqttManager_::tick()
 {
-    // if (menuInternalBroker.isActive()) broker.loop();
-    if (WiFi.isConnected())
-    {
-        if (!client.connected())
-        {
-            long now = millis();
-            if (now - lastReconnectAttempt > 5000)
-            {
-                lastReconnectAttempt = now;
-                Serial.println("Attempt to connect to MQTT");
-                // Attempt to reconnect
-                if (reconnect())
-                {
-                    lastReconnectAttempt = 0;
-                }
-            }
-        }
-        else
-        {
-            // Client connected
-            client.loop();
-        }
-    }
+    // Client connected
+    mqtt.loop();
 }
 
 void MqttManager_::publish(const char *topic, const char *payload)
@@ -148,5 +263,38 @@ void MqttManager_::publish(const char *topic, const char *payload)
     strcpy(result, SystemManager.getValue("mqttprefix"));
     strcat(result, "/");
     strcat(result, topic);
-    client.publish(result, payload);
+    mqtt.publish(result, payload, false);
+}
+
+void MqttManager_::HAState(uint8_t btn, const char *state)
+{
+    switch (btn)
+    {
+    case 0:
+        btn1.setValue(state);
+        break;
+    case 1:
+        btn2.setValue(state);
+        break;
+    case 2:
+        btn3.setValue(state);
+        break;
+    case 3:
+        btn4.setValue(state);
+        break;
+    case 4:
+        btn5.setValue(state);
+        break;
+    case 5:
+        btn6.setValue(state);
+        break;
+    case 6:
+        btn7.setValue(state);
+        break;
+    case 7:
+        btn8.setValue(state);
+        break;
+    default:
+        break;
+    }
 }

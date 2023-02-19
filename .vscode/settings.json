@@ -16,6 +16,8 @@
         "new": "cpp",
         "random": "cpp",
         "typeinfo": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "system_error": "cpp",
+        "regex": "cpp"
     }
 }

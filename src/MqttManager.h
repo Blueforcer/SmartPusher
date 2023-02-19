@@ -15,6 +15,7 @@ class MqttManager_
         void setup();
         void tick();
         void publish(const char *topic,const char *payload);
+        void HAState(uint8_t btn, const char *state);
 };
 
 extern MqttManager_ &MqttManager;

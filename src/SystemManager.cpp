@@ -11,10 +11,11 @@
 #include "images.h"
 #include "SPI.h"
 #include <SPIFFS.h>
+#include <ArduinoJson.h>
 
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
-const char *VERSION = "1.92";
+const char *VERSION = "1.95";
 
 // U8G2_SSD1306_1 028X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 SSD1306 gfx(0x3c, SDA, SCL);
@@ -43,6 +44,7 @@ String weekDay;
 String fYear;
 String fDate;
 String fTime;
+uint8_t lastBrightness = 100;
 
 File fsUploadFile;
 String temp = "";
@@ -198,7 +200,6 @@ WebConfig conf;
 
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 {
-    Serial.println("Connected to AP successfully!");
 }
 
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -445,7 +446,6 @@ void handleRoot()
     conf.handleFormRequest(&server);
     if (server.hasArg("SAVE"))
     {
-
     }
 }
 
@@ -659,7 +659,6 @@ void SystemManager_::setup()
             yield();
         });
     server.begin(80);
-
     if (connected)
     {
         char dns[30];
@@ -720,6 +719,7 @@ void SystemManager_::clear()
 
 void SystemManager_::setBrightness(uint8_t val)
 {
+    Serial.println(val);
     gfx.setContrast(val);
     if (val == 0)
     {
@@ -729,8 +729,22 @@ void SystemManager_::setBrightness(uint8_t val)
     {
         gfx.displayOn();
     };
-
+    lastBrightness = val;
     ButtonManager.setBrightness(val);
+}
+
+void SystemManager_::BrightnessOnOff(boolean val)
+{
+    if (val)
+    {
+        gfx.displayOn();
+        ButtonManager.setBrightness(lastBrightness);
+    }
+    else
+    {
+        gfx.displayOff();
+        ButtonManager.setBrightness(0);
+    };
 }
 
 const char *SystemManager_::getValue(const char *tag)
@@ -879,6 +893,10 @@ void SystemManager_::renderImageScreen()
         screen = 0;
         ImageShown = false;
     }
+}
+
+void SystemManager_::renderCustomScreen()
+{
 }
 
 void SystemManager_::renderClockScreen()
