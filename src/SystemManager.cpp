@@ -70,8 +70,6 @@ WebServer server(80);
 
 FSWebServer mws(FILESYSTEM, server);
 
-
-
 ////////////////////////////////  Filesystem  /////////////////////////////////////////
 void startFilesystem()
 {
@@ -102,6 +100,18 @@ bool SystemManager_::loadOptions()
 {
     if (FILESYSTEM.exists("/config.json"))
     {
+        mws.getOptionValue("Use RGB buttons", rgbbuttons);
+        mws.getOptionValue("Use customized pages", custompages);
+        mws.getOptionValue("Pushmode", btn1push);
+        mws.getOptionValue("Pushmode for Button 2", btn2push);
+        mws.getOptionValue("Pushmode for Button 3", btn3push);
+        mws.getOptionValue("Pushmode for Button 4", btn4push);
+        mws.getOptionValue("Pushmode for Button 5", btn5push);
+        mws.getOptionValue("Pushmode for Button 6", btn6push);
+        mws.getOptionValue("Pushmode for Button 7", btn7push);
+        mws.getOptionValue("Pushmode for Button 8", btn8push);
+        mws.getOptionValue("NTP Server", NTPServer);
+        mws.getOptionValue("Timezone", NTPTZ);
         mws.getOptionValue("Broker", mqtthost);
         mws.getOptionValue("Port", mqttport);
         mws.getOptionValue("Username", mqttuser);
@@ -116,6 +126,19 @@ bool SystemManager_::loadOptions()
 
 void SystemManager_::saveOptions()
 {
+    mws.saveOptionValue("Use RGB buttons", rgbbuttons);
+    mws.saveOptionValue("Use customized pages", custompages);
+    mws.saveOptionValue("Pushmode", btn1push);
+    mws.saveOptionValue("Pushmode for Button 2", btn2push);
+    mws.saveOptionValue("Pushmode for Button 3", btn3push);
+    mws.saveOptionValue("Pushmode for Button 4", btn4push);
+    mws.saveOptionValue("Pushmode for Button 5", btn5push);
+    mws.saveOptionValue("Pushmode for Button 6", btn6push);
+    mws.saveOptionValue("Pushmode for Button 7", btn7push);
+    mws.saveOptionValue("Pushmode for Button 8", btn8push);
+    mws.saveOptionValue("NTP Server", NTPServer);
+    mws.saveOptionValue("Timezone", NTPTZ);
+    mws.saveOptionValue("Broker", mqtthost);
     mws.saveOptionValue("Port", mqttport);
     mws.saveOptionValue("Username", mqttuser);
     mws.saveOptionValue("Password", mqttpass);
@@ -211,6 +234,9 @@ void SystemManager_::setup()
     mws.addHandler("/reload", HTTP_GET, handleLoadOptions);
 
     // Configure /setup page and start Web Server
+    mws.addOptionBox("General");
+    mws.addOption("Use RGB buttons", rgbbuttons);
+    mws.addOption("Use customized pages", custompages);
     mws.addOptionBox("MQTT");
     mws.addOption("Broker", mqtthost);
     mws.addOption("Port", mqttport);
@@ -218,7 +244,7 @@ void SystemManager_::setup()
     mws.addOption("Password", mqttpass);
     mws.addOption("Prefix", mqttprefix);
     mws.addOptionBox("Buttons");
-    mws.addOption("Pushmode for Button 1", btn1push);
+    mws.addOption("Pushmode", btn1push);
     mws.addOption("Pushmode for Button 2", btn2push);
     mws.addOption("Pushmode for Button 3", btn3push);
     mws.addOption("Pushmode for Button 4", btn4push);
@@ -230,7 +256,6 @@ void SystemManager_::setup()
     mws.addOption("NTP Server", NTPServer);
     mws.addOption("Timezone", NTPTZ);
 
-
     if (mws.begin())
     {
         Serial.println(F("Smartpusher Web Server started on IP Address: "));
@@ -240,7 +265,7 @@ void SystemManager_::setup()
         Serial.println(F("Open /update page to upload firmware and filesystem updates"));
     }
 
-    connected = !mws.inAPmode();
+    connected = mws.isConnected();
 
     if (!connected)
     {

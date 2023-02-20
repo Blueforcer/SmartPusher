@@ -80,9 +80,9 @@ public:
 
     bool begin(const char *path = nullptr);
 
-    void run();
+    bool isConnected();
 
-    boolean inAPmode();
+    void run();
 
     void addHandler(const Uri &uri, HTTPMethod method, WebServerClass::THandlerFunction fn);
 
@@ -109,24 +109,32 @@ public:
     //     return m_varList.saveValues(m_filesystem, "/config.json");
     // }
 
-    inline void addOptionBox(const char* boxTitle) {
+    inline void addOptionBox(const char *boxTitle)
+    {
         addOption("param-box", boxTitle, false);
     }
 
-    inline void addHTML(const char* html, const char* id) {
+    inline void addHTML(const char *html, const char *id)
+    {
         String elementId = "raw-html-";
         elementId += id;
-        addOption(elementId.c_str(), html, false);
+        char trimmed[strlen(html)];
+        removeWhiteSpaces(html, trimmed);
+        addOption(elementId.c_str(), trimmed, false);
     }
 
-    inline void addCSS(const char* css, const char* id) {
-        String elementId = "raw-css-";
-        elementId += id;
-        addOption(elementId.c_str(), css, false);
+    inline void addCSS(const char *css)
+    {
+        char trimmed[strlen(css)];
+        removeWhiteSpaces(css, trimmed);
+        addOption("raw-css", trimmed, false);
     }
 
-    inline void addJavascript(const char* script) {
-        addOption("raw-javascript", script, true);
+    inline void addJavascript(const char *script)
+    {
+        char trimmed[strlen(script)];
+        removeWhiteSpaces(script, trimmed);
+        addOption("raw-javascript", trimmed, true);
     }
 
     // Only for backward-compatibility
@@ -143,11 +151,10 @@ public:
         addOption(label, val, false, d_min, d_max, step);
     }
 
-
     // Add custom option to config webpage (type of parameter will be deduced from variable itself)
     template <typename T>
     inline void addOption(const char *label, T val, bool hidden = false,
-                    double d_min = MIN_F, double d_max = MAX_F, double step = 1.0)
+                          double d_min = MIN_F, double d_max = MAX_F, double step = 1.0)
     {
         File file = m_filesystem->open("/config.json", "r");
         int sz = file.size() * 1.33;
@@ -172,7 +179,7 @@ public:
             DebugPrintln(F("File not found, will be created new configuration file"));
         }
 
-        numOptions++ ;
+        numOptions++;
 
         String key = label;
         if (hidden)
@@ -187,13 +194,16 @@ public:
             obj["max"] = d_max;
             obj["step"] = step;
         }
-        else {
+        else
+        {
             // Univoque key name
-            if (key.equals("param-box")) {
-                key += numOptions ;
+            if (key.equals("param-box"))
+            {
+                key += numOptions;
             }
-            if (key.equals("raw-javascript")) {
-                key += numOptions ;
+            if (key.equals("raw-javascript"))
+            {
+                key += numOptions;
             }
             doc[key] = static_cast<T>(val);
         }
@@ -205,8 +215,6 @@ public:
         }
         file.close();
     }
-
-
 
     // Get current value for a specific custom option (true on success)
     template <typename T>
@@ -267,7 +275,6 @@ public:
 #endif
 
 private:
-
     char m_basePath[16];
     UpdateServerClass m_httpUpdater;
     DNSServer m_dnsServer;
@@ -275,7 +282,7 @@ private:
     File m_uploadFile;
     bool m_fsOK = false;
     bool m_apmode = false;
-    bool inAP = false;
+    bool connected = false;
     char *m_apWebpage = (char *)"/setup";
     uint32_t m_timeout = 10000;
 
@@ -284,9 +291,11 @@ private:
     void doWifiConnection();
     void doRestart();
     void replyOK();
+
     void getIpAddress();
     void handleRequest();
 #ifdef INCLUDE_SETUP_HTM
+    void removeWhiteSpaces(const char *input, char *tr);
     void handleSetup();
     uint8_t numOptions = 0;
 #endif
@@ -308,7 +317,6 @@ private:
     void handleStatus();
     void handleFileList();
 #endif
-
 };
 
 #endif

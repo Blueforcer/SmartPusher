@@ -169,28 +169,28 @@ boolean getPushSetting(uint8_t btn)
     switch (btn)
     {
     case 0:
-        return SystemManager.getBool("btn1push");
+        return SystemManager.btn1push;
         break;
     case 1:
-        return SystemManager.getBool("btn2push");
+        return SystemManager.btn2push;
         break;
     case 2:
-        return SystemManager.getBool("btn3push");
+        return SystemManager.btn3push;
         break;
     case 3:
-        return SystemManager.getBool("btn4push");
+        return SystemManager.btn4push;
         break;
     case 4:
-        return SystemManager.getBool("btn5push");
+        return SystemManager.btn5push;
         break;
     case 5:
-        return SystemManager.getBool("btn6push");
+        return SystemManager.btn6push;
         break;
     case 6:
-        return SystemManager.getBool("btn7push");
+        return SystemManager.btn7push;
         break;
     case 7:
-        return SystemManager.getBool("btn8push");
+        return SystemManager.btn8push;
         break;
     default:
         return false;

@@ -1,6 +1,4 @@
 #include <MqttManager.h>
-
-#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <ArduinoHA.h>
 
@@ -90,10 +88,7 @@ void onSwitchCommand(bool state, HASwitch *sender)
 void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 {
     String strTopic = String(topic);
-    String strPayload = (const char*)payload;
-
-    Serial.println(strTopic);
-    Serial.println(strPayload);
+    String strPayload = String((const char *)payload).substring(0, length);
 
     if (strTopic == SystemManager.mqttprefix + String("/brightness"))
     {
@@ -102,7 +97,6 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
     }
     if (strTopic == SystemManager.mqttprefix + String("/message"))
     {
-
         SystemManager.ShowMessage(strPayload);
         return;
     }
@@ -120,8 +114,6 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
         }
     }
 }
-
-long lastReconnectAttempt = 0;
 
 void onMqttConnected()
 {
@@ -246,7 +238,6 @@ void MqttManager_::setup()
     btn8.setName("Button 8");
     btn8.setValue("-");
 
-    lastReconnectAttempt = 0;
     connect();
 }
 
