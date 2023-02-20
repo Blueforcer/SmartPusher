@@ -117,8 +117,7 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 
 void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 {
-    int ledtype = SystemManager.getInt("leds");
-    if (ledtype != 4)
+    if (SystemManager.ledControl != 4)
         return;
     int count = 1;
     switch (type)
@@ -353,13 +352,13 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 
 void ButtonManager_::setStates()
 {
-    int ledtype = SystemManager.getInt("leds");
-    if (ledtype != 4)
+    
+    if (SystemManager.ledControl != 4)
     {
 
         for (int i = 0; i <= 7; i++)
         {
-            setButtonLight(i, ledtype);
+            setButtonLight(i, SystemManager.ledControl);
         }
     }
 }

@@ -102,7 +102,7 @@ bool SystemManager_::loadOptions()
     {
         mws.getOptionValue("Use RGB buttons", rgbbuttons);
         mws.getOptionValue("Use customized pages", custompages);
-        mws.getOptionValue("Pushmode", btn1push);
+        mws.getOptionValue("Pushmode for Button 1", btn1push);
         mws.getOptionValue("Pushmode for Button 2", btn2push);
         mws.getOptionValue("Pushmode for Button 3", btn3push);
         mws.getOptionValue("Pushmode for Button 4", btn4push);
@@ -117,6 +117,7 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Username", mqttuser);
         mws.getOptionValue("Password", mqttpass);
         mws.getOptionValue("Prefix", mqttprefix);
+        mws.getOptionValue("Actions over serial", serialOut);
         return true;
     }
     else
@@ -128,7 +129,7 @@ void SystemManager_::saveOptions()
 {
     mws.saveOptionValue("Use RGB buttons", rgbbuttons);
     mws.saveOptionValue("Use customized pages", custompages);
-    mws.saveOptionValue("Pushmode", btn1push);
+    mws.saveOptionValue("Pushmode for Button 1", btn1push);
     mws.saveOptionValue("Pushmode for Button 2", btn2push);
     mws.saveOptionValue("Pushmode for Button 3", btn3push);
     mws.saveOptionValue("Pushmode for Button 4", btn4push);
@@ -143,6 +144,7 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Username", mqttuser);
     mws.saveOptionValue("Password", mqttpass);
     mws.saveOptionValue("Prefix", mqttprefix);
+    mws.saveOptionValue("Actions over serial", serialOut);
     Serial.println(F("Application options saved."));
 }
 
@@ -237,6 +239,7 @@ void SystemManager_::setup()
     mws.addOptionBox("General");
     mws.addOption("Use RGB buttons", rgbbuttons);
     mws.addOption("Use customized pages", custompages);
+    mws.addOption("Actions over serial", serialOut);
     mws.addOptionBox("MQTT");
     mws.addOption("Broker", mqtthost);
     mws.addOption("Port", mqttport);
@@ -244,7 +247,7 @@ void SystemManager_::setup()
     mws.addOption("Password", mqttpass);
     mws.addOption("Prefix", mqttprefix);
     mws.addOptionBox("Buttons");
-    mws.addOption("Pushmode", btn1push);
+    mws.addOption("Pushmode for Button 1", btn1push);
     mws.addOption("Pushmode for Button 2", btn2push);
     mws.addOption("Pushmode for Button 3", btn3push);
     mws.addOption("Pushmode for Button 4", btn4push);

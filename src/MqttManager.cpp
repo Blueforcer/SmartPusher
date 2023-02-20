@@ -50,6 +50,7 @@ void onStateCommand(bool state, HALight *sender)
 
 void onSwitchCommand(bool state, HASwitch *sender)
 {
+    Serial.println(state);
     if (sender == &led1)
     {
         ButtonManager.setButtonState(0, state);
