@@ -1,15 +1,10 @@
 #include <MqttManager.h>
 #include <PubSubClient.h>
-#include <config.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <ArduinoHA.h>
 
-// MqttBroker broker(PORT);
 WiFiClient espClient;
-
-byte mac[] = {0x00, 0x10, 0xFA, 0x6E, 0x38, 0x4A};
-
 HADevice device;
 HAMqtt mqtt(espClient, device, 18);
 
@@ -95,26 +90,30 @@ void onSwitchCommand(bool state, HASwitch *sender)
 void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 {
     String strTopic = String(topic);
-    String strPayload = String((char *)payload);
+    String strPayload = (const char*)payload;
 
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/brightness"))
+    Serial.println(strTopic);
+    Serial.println(strPayload);
+
+    if (strTopic == SystemManager.mqttprefix + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
         return;
     }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/message"))
+    if (strTopic == SystemManager.mqttprefix + String("/message"))
     {
+
         SystemManager.ShowMessage(strPayload);
         return;
     }
-    if (strTopic == SystemManager.getValue("mqttprefix") + String("/image"))
+    if (strTopic == SystemManager.mqttprefix + String("/image"))
     {
         SystemManager.ShowImage(strPayload);
         return;
     }
     for (int i = 0; i < 8; i++)
     {
-        if (strTopic == SystemManager.getValue("mqttprefix") + String("/button" + String(i + 1) + "/state"))
+        if (strTopic == SystemManager.mqttprefix + String("/button" + String(i + 1) + "/state"))
         {
             ButtonManager.setButtonState(i, atoi(strPayload.c_str()));
             break;
@@ -126,15 +125,15 @@ long lastReconnectAttempt = 0;
 
 void onMqttConnected()
 {
-    String prefix = SystemManager.getValue("mqttprefix");
+    String prefix = SystemManager.mqttprefix;
     for (int i = 1; i <= 8; i++)
     {
         String topic = prefix + "/button" + String(i) + "/state";
         mqtt.subscribe(topic.c_str());
     }
-    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/brightness")).c_str());
-    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/message")).c_str());
-    mqtt.subscribe((SystemManager.getValue("mqttprefix") + String("/image")).c_str());
+    mqtt.subscribe((SystemManager.mqttprefix + String("/brightness")).c_str());
+    mqtt.subscribe((SystemManager.mqttprefix + String("/message")).c_str());
+    mqtt.subscribe((SystemManager.mqttprefix + String("/image")).c_str());
 
     for (int i = 1; i < 9; i++)
     {
@@ -151,14 +150,14 @@ void connect()
 {
     mqtt.onMessage(onMqttMessage);
     mqtt.onConnected(onMqttConnected);
-    if (SystemManager.getValue("mqttuser") == "" || SystemManager.getValue("mqttpwd") == "")
+    if (SystemManager.mqttuser == "" || SystemManager.mqttpass == "")
     {
 
-        mqtt.begin(SystemManager.getValue("mqttbroker"), SystemManager.getInt("mqttport"), nullptr, nullptr);
+        mqtt.begin(SystemManager.mqtthost.c_str(), SystemManager.mqttport, nullptr, nullptr);
     }
     else
     {
-        mqtt.begin(SystemManager.getValue("mqttbroker"), SystemManager.getInt("mqttport"), SystemManager.getValue("mqttuser"), SystemManager.getValue("mqttpwd"));
+        mqtt.begin(SystemManager.mqtthost.c_str(), SystemManager.mqttport, SystemManager.mqttuser.c_str(), SystemManager.mqttpass.c_str());
     }
 }
 
@@ -253,14 +252,16 @@ void MqttManager_::setup()
 
 void MqttManager_::tick()
 {
-    // Client connected
-    mqtt.loop();
+    if (SystemManager.mqtthost != "")
+    {
+        mqtt.loop();
+    }
 }
 
 void MqttManager_::publish(const char *topic, const char *payload)
 {
     char result[100];
-    strcpy(result, SystemManager.getValue("mqttprefix"));
+    strcpy(result, SystemManager.mqttprefix.c_str());
     strcat(result, "/");
     strcat(result, topic);
     mqtt.publish(result, payload, false);
