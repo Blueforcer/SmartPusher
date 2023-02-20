@@ -25,6 +25,7 @@ public:
     bool rgbbuttons = false;
     bool custompages = false;
     bool serialOut = false;
+    bool colonBlink = true;
     uint8_t ledControl = 3;
     String NTPServer = "de.pool.ntp.org";
     String NTPTZ = "CET-1CEST,M3.5.0,M10.5.0/3";

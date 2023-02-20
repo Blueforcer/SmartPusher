@@ -13,26 +13,12 @@
 #include <LittleFS.h>
 #include <config.h>
 
-// Test "options" values
-uint8_t ledPin = LED_BUILTIN;
-bool boolVar = true;
-uint32_t longVar = 1234567890;
-float floatVar = 15.5F;
-
-#define LED_LABEL "The LED pin number"
-#define BOOL_LABEL "A bool variable"
-#define LONG_LABEL "A long variable"
-#define FLOAT_LABEL "A float varible"
-#define STRING_LABEL "A String variable"
-
+SSD1306 gfx(0x3c, SDA, SCL);
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
+
 const char *VERSION = "1.95";
 
-// U8G2_SSD1306_1 028X64_NONAME_F_SW_I2C gfx(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
-SSD1306 gfx(0x3c, SDA, SCL);
-
-const int daylightOffset_sec = 3600;
 tm timeinfo;
 
 uint8_t screen = 0;
@@ -45,9 +31,9 @@ const long CHECK_WIFI_TIME = 10000;
 unsigned long PREVIOUS_WIFI_CHECK = 0;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const char *Pushtype;
+
 String MQTTMessage;
 String Image;
-
 uint8_t BtnNr;
 boolean TypeShown;
 boolean MessageShown;
@@ -62,18 +48,14 @@ File fsUploadFile;
 String temp = "";
 
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-bool colon_switch = true;
-const char *updateIndex = "<form method='POST' action='/doupdate' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 
 #define FILESYSTEM LittleFS
 WebServer server(80);
-
 FSWebServer mws(FILESYSTEM, server);
 
 ////////////////////////////////  Filesystem  /////////////////////////////////////////
 void startFilesystem()
 {
-    // FILESYSTEM INIT
     if (FILESYSTEM.begin())
     {
         File root = FILESYSTEM.open("/", "r");
@@ -95,7 +77,7 @@ void startFilesystem()
     }
 }
 
-////////////////////  Load application options from filesystem  ////////////////////
+////////////////////  Load&Save application options from filesystem  ////////////////////
 bool SystemManager_::loadOptions()
 {
     if (FILESYSTEM.exists("/config.json"))
@@ -118,6 +100,7 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Password", mqttpass);
         mws.getOptionValue("Prefix", mqttprefix);
         mws.getOptionValue("Actions over serial", serialOut);
+        mws.getOptionValue("Time colon blink", colonBlink);
         return true;
     }
     else
@@ -145,6 +128,8 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Password", mqttpass);
     mws.saveOptionValue("Prefix", mqttprefix);
     mws.saveOptionValue("Actions over serial", serialOut);
+    mws.saveOptionValue("Actions over serial", serialOut);
+    mws.saveOptionValue("Time colon blink", colonBlink);
     Serial.println(F("Application options saved."));
 }
 
@@ -229,17 +214,15 @@ void SystemManager_::setup()
     else
         Serial.println(F("Application options NOT loaded!"));
 
+    gfx.clear();
+    gfx.setFont(ArialMT_Plain_16);
+    gfx.drawString(10, 5, "Connecting");
+    gfx.drawString(10, 30, "to WiFi...");
+    gfx.display();
     // Try to connect to stored SSID, start AP if fails after timeout
     IPAddress myIP = mws.startWiFi(15000, "SmartPusher", "12345678");
 
-    // Add custom page handlers to webserver
-    mws.addHandler("/reload", HTTP_GET, handleLoadOptions);
-
     // Configure /setup page and start Web Server
-    mws.addOptionBox("General");
-    mws.addOption("Use RGB buttons", rgbbuttons);
-    mws.addOption("Use customized pages", custompages);
-    mws.addOption("Actions over serial", serialOut);
     mws.addOptionBox("MQTT");
     mws.addOption("Broker", mqtthost);
     mws.addOption("Port", mqttport);
@@ -258,6 +241,11 @@ void SystemManager_::setup()
     mws.addOptionBox("NTP");
     mws.addOption("NTP Server", NTPServer);
     mws.addOption("Timezone", NTPTZ);
+    mws.addOptionBox("General");
+    mws.addOption("Time colon blink", colonBlink);
+    mws.addOption("Use RGB buttons", rgbbuttons);
+    mws.addOption("Use customized pages", custompages);
+    mws.addOption("Actions over serial", serialOut);
 
     if (mws.begin())
     {
@@ -277,6 +265,18 @@ void SystemManager_::setup()
         gfx.drawString(25, 15, "AP MODE");
         gfx.drawString(20, 35, "192.168.4.1");
         gfx.display();
+    }
+    else
+    {
+        gfx.setFont(ArialMT_Plain_16);
+        Serial.print("IP-Adresse = ");
+        Serial.println(WiFi.localIP());
+        gfx.clear();
+        gfx.drawString(20, 10, "Connected!");
+        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(WiFi.localIP().toString())) / 2, 40, WiFi.localIP().toString());
+        gfx.display();
+        connected = true;
+        delay(3000);
     }
     gfx.clear();
 
@@ -522,8 +522,8 @@ void SystemManager_::renderClockScreen()
 
         previousMillis = currentMillis;
         weekDay = weekDays[timeinfo.tm_wday];
-
-        if (true) // conf.getBool("colonblink")
+        bool colon_switch;
+        if (colonBlink) // conf.getBool("colonblink")
         {
             colon_switch = !colon_switch;
         }
