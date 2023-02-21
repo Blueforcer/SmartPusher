@@ -61,6 +61,7 @@ public:
     void checkButtons();
     void LeaveMenuState();
     void turnAllOff();
+    void blinkAll();
     void setBrightness(uint8_t btn);
     void ShowAnimation(uint8_t type, uint8_t btn);
     bool getButtonState(uint8_t);

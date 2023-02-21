@@ -18,6 +18,7 @@
         "typeinfo": "cpp",
         "algorithm": "cpp",
         "system_error": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "fstream": "cpp"
     }
 }

@@ -43,7 +43,7 @@ void ButtonManager_::setup()
         ButtonConfig::kFeatureSuppressClickBeforeDoubleClick);
     buttonConfig->setClickDelay(300);
     buttonConfig->setDoubleClickDelay(600);
-    setStates();
+
 }
 
 void ButtonManager_::tick()
@@ -79,6 +79,16 @@ void ButtonManager_::turnAllOff()
         leds[i].Off();
     }
 }
+
+void ButtonManager_::blinkAll()
+{
+    for (int i = 0; i < 8; i++)
+    {
+        leds[i].Breathe(1000).Forever();
+    }
+}
+
+
 
 void ButtonManager_::checkButtons()
 {
@@ -116,7 +126,7 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 
 void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 {
-    if (SystemManager.ledControl != 4)
+    if (SystemManager.ledMode != "OnPush")
         return;
     int count = 1;
     switch (type)
@@ -167,28 +177,28 @@ boolean getPushSetting(uint8_t btn)
     switch (btn)
     {
     case 0:
-        return SystemManager.btn1push;
+        return SystemManager.BTN1_PUSH;
         break;
     case 1:
-        return SystemManager.btn2push;
+        return SystemManager.BTN2_PUSH;
         break;
     case 2:
-        return SystemManager.btn3push;
+        return SystemManager.BTN3_PUSH;
         break;
     case 3:
-        return SystemManager.btn4push;
+        return SystemManager.BTN4_PUSH;
         break;
     case 4:
-        return SystemManager.btn5push;
+        return SystemManager.BTN5_PUSH;
         break;
     case 5:
-        return SystemManager.btn6push;
+        return SystemManager.BTN6_PUSH;
         break;
     case 6:
-        return SystemManager.btn7push;
+        return SystemManager.BTN7_PUSH;
         break;
     case 7:
-        return SystemManager.btn8push;
+        return SystemManager.BTN8_PUSH;
         break;
     default:
         return false;
@@ -248,7 +258,7 @@ void ButtonManager_::handleReleased(uint8_t btn)
     }
 }
 
-void serialOutput(uint8_t btn, uint8_t type)
+void SERIAL_OUTPUT(uint8_t btn, uint8_t type)
 {
     String Str = "SP" + String(btn) + String(type);
     Serial.println(Str);
@@ -256,7 +266,8 @@ void serialOutput(uint8_t btn, uint8_t type)
 
 void ButtonManager_::SendState(int type, uint8_t btn)
 {
-    serialOutput(btn, type);
+    if (SystemManager.SERIAL_OUT)
+        SERIAL_OUTPUT(btn, type);
     switch (type)
     {
     case 1:
@@ -351,13 +362,34 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 
 void ButtonManager_::setStates()
 {
+    uint8_t mode;
+    if (SystemManager.ledMode == "Off")
+    {
+        mode = 0;
+    }
+    else if (SystemManager.ledMode == "On")
+    {
+        mode = 1;
+    }
+    else if (SystemManager.ledMode == "Fade")
+    {
+        mode = 2;
+    }
+    else if (SystemManager.ledMode == "Extern")
+    {
+        mode = 3;
+    }
+    else if (SystemManager.ledMode == "OnPush")
+    {
+        mode = 4;
+    }
 
-    if (SystemManager.ledControl != 4)
+    if (mode != 4)
     {
 
         for (int i = 0; i <= 7; i++)
         {
-            setButtonLight(i, SystemManager.ledControl);
+            setButtonLight(i, mode);
         }
     }
 }

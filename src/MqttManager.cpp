@@ -91,23 +91,23 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
     String strTopic = String(topic);
     String strPayload = String((const char *)payload).substring(0, length);
 
-    if (strTopic == SystemManager.mqttprefix + String("/brightness"))
+    if (strTopic == SystemManager.MQTT_PREFIX + String("/brightness"))
     {
         SystemManager.setBrightness(atoi(strPayload.c_str()));
         return;
     }
-    if (strTopic == SystemManager.mqttprefix + String("/message"))
+    if (strTopic == SystemManager.MQTT_PREFIX + String("/message"))
     {
         SystemManager.ShowMessage(strPayload);
         return;
     }
-    if (strTopic == SystemManager.mqttprefix + String("/image"))
+    if (strTopic == SystemManager.MQTT_PREFIX + String("/image"))
     {
         SystemManager.ShowImage(strPayload);
         return;
     }
 
-    if (strTopic.startsWith(SystemManager.mqttprefix + "/custompage/"))
+    if (strTopic.startsWith(SystemManager.MQTT_PREFIX + "/custompage/"))
     {
         int firstSlash = strTopic.indexOf("/") + 1;
         int secondSlash = strTopic.indexOf("/", firstSlash) + 1;
@@ -120,7 +120,7 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 
     for (int i = 0; i < 8; i++)
     {
-        if (strTopic == SystemManager.mqttprefix + String("/button" + String(i + 1) + "/state"))
+        if (strTopic == SystemManager.MQTT_PREFIX + String("/button" + String(i + 1) + "/state"))
         {
             ButtonManager.setButtonState(i, atoi(strPayload.c_str()));
             break;
@@ -130,16 +130,16 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 
 void onMqttConnected()
 {
-    String prefix = SystemManager.mqttprefix;
+    String prefix = SystemManager.MQTT_PREFIX;
     for (int i = 1; i <= 8; i++)
     {
         String topic = prefix + "/button" + String(i) + "/state";
         mqtt.subscribe(topic.c_str());
     }
-    mqtt.subscribe((SystemManager.mqttprefix + String("/brightness")).c_str());
-    mqtt.subscribe((SystemManager.mqttprefix + String("/message")).c_str());
-    mqtt.subscribe((SystemManager.mqttprefix + String("/image")).c_str());
-    mqtt.subscribe((SystemManager.mqttprefix + String("/custompage/#")).c_str());
+    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/brightness")).c_str());
+    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/message")).c_str());
+    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/image")).c_str());
+    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/custompage/#")).c_str());
 
     for (int i = 1; i < 9; i++)
     {
@@ -156,14 +156,14 @@ void connect()
 {
     mqtt.onMessage(onMqttMessage);
     mqtt.onConnected(onMqttConnected);
-    if (SystemManager.mqttuser == "" || SystemManager.mqttpass == "")
+    if (SystemManager.MQTT_USER == "" || SystemManager.MQTT_PASS == "")
     {
 
-        mqtt.begin(SystemManager.mqtthost.c_str(), SystemManager.mqttport, nullptr, nullptr);
+        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, nullptr, nullptr);
     }
     else
     {
-        mqtt.begin(SystemManager.mqtthost.c_str(), SystemManager.mqttport, SystemManager.mqttuser.c_str(), SystemManager.mqttpass.c_str());
+        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, SystemManager.MQTT_USER.c_str(), SystemManager.MQTT_PASS.c_str());
     }
 }
 
@@ -172,92 +172,97 @@ void MqttManager_::setup()
 
     byte mac[6];
     WiFi.macAddress(mac);
-    device.setUniqueId(mac, sizeof(mac));
-    device.setName("SmartPusher");
-    device.setSoftwareVersion(SystemManager.VERSION);
-    device.setManufacturer("Blueforcer");
-    device.setModel("8 Button Array");
 
-    brightness.setIcon("mdi:lightbulb");
-    brightness.setName("Brightness");
-    brightness.onStateCommand(onStateCommand);
-    brightness.onBrightnessCommand(onBrightnessCommand); // optional
-    brightness.setCurrentState(true);
+    if (SystemManager.HA_DISCOVERY)
+    {
 
-    led1.onCommand(onSwitchCommand);
-    led1.setIcon("mdi:led-on");
-    led1.setName("LED 1");
+        device.setUniqueId(mac, sizeof(mac));
+        device.setName("SmartPusher");
+        device.setSoftwareVersion(SystemManager.VERSION);
+        device.setManufacturer("Blueforcer");
+        device.setModel("8 Button Array");
 
-    led2.onCommand(onSwitchCommand);
-    led2.setIcon("mdi:led-on");
-    led2.setName("LED 2");
+        brightness.setIcon("mdi:lightbulb");
+        brightness.setName("Brightness");
+        brightness.onStateCommand(onStateCommand);
+        brightness.onBrightnessCommand(onBrightnessCommand); // optional
+        brightness.setCurrentState(true);
+        brightness.setCurrentBrightness(255);
 
-    led3.onCommand(onSwitchCommand);
-    led3.setIcon("mdi:led-on");
-    led3.setName("LED 3");
+        led1.onCommand(onSwitchCommand);
+        led1.setIcon("mdi:led-on");
+        led1.setName("LED 1");
 
-    led4.onCommand(onSwitchCommand);
-    led4.setIcon("mdi:led-on");
-    led4.setName("LED 4");
+        led2.onCommand(onSwitchCommand);
+        led2.setIcon("mdi:led-on");
+        led2.setName("LED 2");
 
-    led5.onCommand(onSwitchCommand);
-    led5.setIcon("mdi:led-on");
-    led5.setName("LED 5");
+        led3.onCommand(onSwitchCommand);
+        led3.setIcon("mdi:led-on");
+        led3.setName("LED 3");
 
-    led6.onCommand(onSwitchCommand);
-    led6.setIcon("mdi:led-on");
-    led6.setName("LED 6");
+        led4.onCommand(onSwitchCommand);
+        led4.setIcon("mdi:led-on");
+        led4.setName("LED 4");
 
-    led7.onCommand(onSwitchCommand);
-    led7.setIcon("mdi:led-on");
-    led7.setName("LED 7");
+        led5.onCommand(onSwitchCommand);
+        led5.setIcon("mdi:led-on");
+        led5.setName("LED 5");
 
-    led8.onCommand(onSwitchCommand);
-    led8.setIcon("mdi:led-on");
-    led8.setName("LED 8");
+        led6.onCommand(onSwitchCommand);
+        led6.setIcon("mdi:led-on");
+        led6.setName("LED 6");
 
-    led8.onCommand(onSwitchCommand);
-    led8.setIcon("mdi:led-on");
-    led8.setName("LED 8");
+        led7.onCommand(onSwitchCommand);
+        led7.setIcon("mdi:led-on");
+        led7.setName("LED 7");
 
-    btn1.setIcon("mdi:radiobox-marked");
-    btn1.setName("Button 1");
-    btn1.setValue("-");
+        led8.onCommand(onSwitchCommand);
+        led8.setIcon("mdi:led-on");
+        led8.setName("LED 8");
 
-    btn2.setIcon("mdi:radiobox-marked");
-    btn2.setName("Button 2");
-    btn2.setValue("-");
+        led8.onCommand(onSwitchCommand);
+        led8.setIcon("mdi:led-on");
+        led8.setName("LED 8");
 
-    btn3.setIcon("mdi:radiobox-marked");
-    btn3.setName("Button 3");
-    btn3.setValue("-");
+        btn1.setIcon("mdi:radiobox-marked");
+        btn1.setName("Button 1");
+        btn1.setValue("-");
 
-    btn4.setIcon("mdi:radiobox-marked");
-    btn4.setName("Button 4");
-    btn4.setValue("-");
+        btn2.setIcon("mdi:radiobox-marked");
+        btn2.setName("Button 2");
+        btn2.setValue("-");
 
-    btn5.setIcon("mdi:radiobox-marked");
-    btn5.setName("Button 5");
-    btn5.setValue("-");
+        btn3.setIcon("mdi:radiobox-marked");
+        btn3.setName("Button 3");
+        btn3.setValue("-");
 
-    btn6.setIcon("mdi:radiobox-marked");
-    btn6.setName("Button 6");
-    btn6.setValue("-");
+        btn4.setIcon("mdi:radiobox-marked");
+        btn4.setName("Button 4");
+        btn4.setValue("-");
 
-    btn7.setIcon("mdi:radiobox-marked");
-    btn7.setName("Button 7");
-    btn7.setValue("-");
+        btn5.setIcon("mdi:radiobox-marked");
+        btn5.setName("Button 5");
+        btn5.setValue("-");
 
-    btn8.setIcon("mdi:radiobox-marked");
-    btn8.setName("Button 8");
-    btn8.setValue("-");
+        btn6.setIcon("mdi:radiobox-marked");
+        btn6.setName("Button 6");
+        btn6.setValue("-");
 
-    connect();
+        btn7.setIcon("mdi:radiobox-marked");
+        btn7.setName("Button 7");
+        btn7.setValue("-");
+
+        btn8.setIcon("mdi:radiobox-marked");
+        btn8.setName("Button 8");
+        btn8.setValue("-");
+    }
+      connect();
 }
 
 void MqttManager_::tick()
 {
-    if (SystemManager.mqtthost != "")
+    if (SystemManager.MQTT_HOST != "")
     {
         mqtt.loop();
     }
@@ -266,7 +271,7 @@ void MqttManager_::tick()
 void MqttManager_::publish(const char *topic, const char *payload)
 {
     char result[100];
-    strcpy(result, SystemManager.mqttprefix.c_str());
+    strcpy(result, SystemManager.MQTT_PREFIX.c_str());
     strcat(result, "/");
     strcat(result, topic);
     mqtt.publish(result, payload, false);
