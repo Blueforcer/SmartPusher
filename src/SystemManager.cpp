@@ -12,31 +12,42 @@
 #include <FS.h>
 #include <LittleFS.h>
 #include <config.h>
+#include <HTTPClient.h>
+#include "OLEDDisplayUi.h"
+#include "MqttManager.h"
 
-SSD1306 gfx(0x3c, SDA, SCL);
+SSD1306 display(0x3c, SDA, SCL);
+OLEDDisplayUi ui(&display);
+
+// This array keeps function pointers to all frames
+// frames are the single views that slide in
+
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 
-const char *VERSION = "1.95";
+const char *VERSION = "2.00";
 
-tm timeinfo;
+time_t now;
+tm timeInfo;
 
-uint8_t screen = 0;
+uint8_t InternalScreen = 0;
 boolean connected = false;
 
-// initialize variables for screen pages
-int currentPage = 0;
-int numScreens = 0;
-StaticJsonDocument<1024> screens;
+StaticJsonDocument<1024> pages;
 
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
 const long PICTURE_INTERVAL = 2000;
 const long CHECK_WIFI_TIME = 10000;
+bool readyForWeatherUpdate = false;
+long timeSinceLastWUpdate = 0;
 unsigned long PREVIOUS_WIFI_CHECK = 0;
+unsigned long PREVIOUS_WEATHER_CHECK = 0;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
+const int UPDATE_INTERVAL_SECS = 20 * 60; // Update every 20 minutes
 const char *Pushtype;
 
+String MY_CITY;
 String MQTTMessage;
 String Image;
 uint8_t BtnNr;
@@ -49,15 +60,32 @@ String fDate;
 String fTime;
 uint8_t lastBrightness = 100;
 
-File fsUploadFile;
-String temp = "";
-
-bool colon_switch;
+void updateData(OLEDDisplay *display);
+bool FIRST_UPDATE;
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 #define FILESYSTEM LittleFS
 WebServer server(80);
 FSWebServer mws(FILESYSTEM, server);
+
+#define LIST_SIZE 5
+const char *dropdownList[LIST_SIZE] = {
+    "Off", "On", "Fade", "Extern", "OnPush"};
+
+// Create a buffer for the JSON data
+const size_t capacity = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 100;
+DynamicJsonDocument doc(3072);
+String cur_temp, cur_condition, cur_icon;
+
+// The getter for the instantiated singleton instance
+SystemManager_ &SystemManager_::getInstance()
+{
+    static SystemManager_ instance;
+    return instance;
+}
+
+// Initialize the global shared instance
+SystemManager_ &SystemManager = SystemManager.getInstance();
 
 ////////////////////////////////  Filesystem  /////////////////////////////////////////
 void startFilesystem()
@@ -83,29 +111,35 @@ void startFilesystem()
     }
 }
 
+void displaywidget(String code_no)
+{
+}
 ////////////////////  Load&Save application options from filesystem  ////////////////////
 bool SystemManager_::loadOptions()
 {
     if (FILESYSTEM.exists("/config.json"))
     {
-        mws.getOptionValue("Use RGB buttons", rgbbuttons);
-        mws.getOptionValue("Use customized pages", custompages);
-        mws.getOptionValue("Pushmode for Button 1", btn1push);
-        mws.getOptionValue("Pushmode for Button 2", btn2push);
-        mws.getOptionValue("Pushmode for Button 3", btn3push);
-        mws.getOptionValue("Pushmode for Button 4", btn4push);
-        mws.getOptionValue("Pushmode for Button 5", btn5push);
-        mws.getOptionValue("Pushmode for Button 6", btn6push);
-        mws.getOptionValue("Pushmode for Button 7", btn7push);
-        mws.getOptionValue("Pushmode for Button 8", btn8push);
-        mws.getOptionValue("NTP Server", NTPServer);
-        mws.getOptionValue("Timezone", NTPTZ);
-        mws.getOptionValue("Broker", mqtthost);
-        mws.getOptionValue("Port", mqttport);
-        mws.getOptionValue("Username", mqttuser);
-        mws.getOptionValue("Password", mqttpass);
-        mws.getOptionValue("Prefix", mqttprefix);
-        mws.getOptionValue("Actions over serial", serialOut);
+        mws.getOptionValue("Use RGB buttons", RGB_BUTTONS);
+        mws.getOptionValue("Use customized pages", CUSTOM_PAGES);
+        mws.getOptionValue("Pushmode for Button 1", BTN1_PUSH);
+        mws.getOptionValue("Pushmode for Button 2", BTN2_PUSH);
+        mws.getOptionValue("Pushmode for Button 3", BTN3_PUSH);
+        mws.getOptionValue("Pushmode for Button 4", BTN4_PUSH);
+        mws.getOptionValue("Pushmode for Button 5", BTN5_PUSH);
+        mws.getOptionValue("Pushmode for Button 6", BTN6_PUSH);
+        mws.getOptionValue("Pushmode for Button 7", BTN7_PUSH);
+        mws.getOptionValue("Pushmode for Button 8", BTN8_PUSH);
+        mws.getOptionValue("NTP Server", NTP_SERVER);
+        mws.getOptionValue("Timezone", NTP_TZ);
+        mws.getOptionValue("Broker", MQTT_HOST);
+        mws.getOptionValue("Port", MQTT_PORT);
+        mws.getOptionValue("Username", MQTT_USER);
+        mws.getOptionValue("Password", MQTT_PASS);
+        mws.getOptionValue("Prefix", MQTT_PREFIX);
+        mws.getOptionValue("Actions over serial", SERIAL_OUT);
+        mws.getOptionValue("LED Mode", ledMode);
+        mws.getOptionValue("City", CITY);
+        mws.getOptionValue("Homeassistant Discovery", HA_DISCOVERY);
         // mws.getOptionValue("Time colon blink", colonBlink);
         return true;
     }
@@ -116,38 +150,276 @@ bool SystemManager_::loadOptions()
 
 void SystemManager_::saveOptions()
 {
-    mws.saveOptionValue("Use RGB buttons", rgbbuttons);
-    mws.saveOptionValue("Use customized pages", custompages);
-    mws.saveOptionValue("Pushmode for Button 1", btn1push);
-    mws.saveOptionValue("Pushmode for Button 2", btn2push);
-    mws.saveOptionValue("Pushmode for Button 3", btn3push);
-    mws.saveOptionValue("Pushmode for Button 4", btn4push);
-    mws.saveOptionValue("Pushmode for Button 5", btn5push);
-    mws.saveOptionValue("Pushmode for Button 6", btn6push);
-    mws.saveOptionValue("Pushmode for Button 7", btn7push);
-    mws.saveOptionValue("Pushmode for Button 8", btn8push);
-    mws.saveOptionValue("NTP Server", NTPServer);
-    mws.saveOptionValue("Timezone", NTPTZ);
-    mws.saveOptionValue("Broker", mqtthost);
-    mws.saveOptionValue("Port", mqttport);
-    mws.saveOptionValue("Username", mqttuser);
-    mws.saveOptionValue("Password", mqttpass);
-    mws.saveOptionValue("Prefix", mqttprefix);
-    mws.saveOptionValue("Actions over serial", serialOut);
-    mws.saveOptionValue("Actions over serial", serialOut);
-    mws.saveOptionValue("Time colon blink", colonBlink);
+    mws.saveOptionValue("Homeassistant Discovery", HA_DISCOVERY);
+    mws.saveOptionValue("Use RGB buttons", RGB_BUTTONS);
+    mws.saveOptionValue("Use customized pages", CUSTOM_PAGES);
+    mws.saveOptionValue("Pushmode for Button 1", BTN1_PUSH);
+    mws.saveOptionValue("Pushmode for Button 2", BTN2_PUSH);
+    mws.saveOptionValue("Pushmode for Button 3", BTN3_PUSH);
+    mws.saveOptionValue("Pushmode for Button 4", BTN4_PUSH);
+    mws.saveOptionValue("Pushmode for Button 5", BTN5_PUSH);
+    mws.saveOptionValue("Pushmode for Button 6", BTN6_PUSH);
+    mws.saveOptionValue("Pushmode for Button 7", BTN7_PUSH);
+    mws.saveOptionValue("Pushmode for Button 8", BTN8_PUSH);
+    mws.saveOptionValue("NTP Server", NTP_SERVER);
+    mws.saveOptionValue("Timezone", NTP_TZ);
+    mws.saveOptionValue("Broker", MQTT_HOST);
+    mws.saveOptionValue("Port", MQTT_PORT);
+    mws.saveOptionValue("Username", MQTT_USER);
+    mws.saveOptionValue("Password", MQTT_PASS);
+    mws.saveOptionValue("Prefix", MQTT_PREFIX);
+    mws.saveOptionValue("Actions over serial", SERIAL_OUT);
+    mws.saveOptionValue("LED Mode", ledMode);
+    mws.saveOptionValue("City", CITY);
     Serial.println(F("Application options saved."));
 }
 
-// The getter for the instantiated singleton instance
-SystemManager_ &SystemManager_::getInstance()
+// function to get the name of the current screen
+String getPageNameName(int index)
 {
-    static SystemManager_ instance;
-    return instance;
+
+    int i = 0;
+    for (const auto &kv : pages.as<JsonObject>())
+    {
+        if (i == index)
+        {
+            return kv.key().c_str();
+        }
+        i++;
+    }
+    return "";
 }
 
-// Initialize the global shared instance
-SystemManager_ &SystemManager = SystemManager.getInstance();
+// What's displayed along the top line
+void msOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
+{
+    display->setColor(WHITE);
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    char buff[16];
+    sprintf_P(buff, PSTR("%02d:%02d"), timeInfo.tm_hour, timeInfo.tm_min);
+    display->drawString(0, 54, String(buff));
+    display->setTextAlignment(TEXT_ALIGN_RIGHT);
+    display->drawString(128, 54, cur_temp + "°C");
+    display->drawHorizontalLine(0, 52, 128);
+}
+
+void customFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    String pageName;
+    if (ui.getUiState()->frameState == FIXED)
+    {
+        pageName = getPageNameName(ui.getUiState()->currentFrame - 2);
+    }
+    else
+    {
+        pageName = getPageNameName(ui.getUiState()->currentFrame - 1);
+    }
+
+    if (pageName != "")
+    {
+        JsonArray page = pages[pageName].as<JsonArray>();
+        for (JsonObject obj : page)
+        {
+            int x1 = obj["x"];
+            int y1 = obj["y"];
+            int s = obj["s"];
+            switch (s)
+            {
+            case 10:
+                display->setFont(ArialMT_Plain_10);
+                break;
+            case 16:
+                display->setFont(ArialMT_Plain_16);
+                break;
+            case 24:
+                display->setFont(ArialMT_Plain_24);
+                break;
+            default:
+                display->setFont(ArialMT_Plain_10);
+                break;
+            }
+            JsonObject::iterator it = obj.begin();
+            while (it != obj.end())
+            {
+                String key = it->key().c_str();
+                if (key != "x" && key != "y" && key != "s")
+                {
+                    String vt = it->value().as<String>();
+                    display->setTextAlignment(TEXT_ALIGN_LEFT);
+                    display->drawString(x1 + x, y1 + y, vt);
+                }
+                ++it;
+            }
+        }
+    }
+}
+
+String getMeteoconIcon(String icon)
+{
+    bool night;
+    if ((timeInfo.tm_hour > 18 && timeInfo.tm_hour < 24) || (timeInfo.tm_hour > -1 && timeInfo.tm_hour < 6))
+    {
+        night = true;
+    }
+    else
+    {
+        night = false;
+    }
+
+    // 01d
+    if (icon == "o" && !night)
+    {
+        return "B";
+    }
+    // 01n
+    if (icon == "o" && night)
+    {
+        return "C";
+    }
+    // few clouds
+    // 02d
+    if (icon == "m" && !night)
+    {
+        return "H";
+    }
+    // 02n
+    if (icon == "m" && night)
+    {
+        return "4";
+    }
+    // scattered clouds
+    // 03d
+    if (icon == "mm" && !night)
+    {
+        return "N";
+    }
+    // 03n
+    if (icon == "mm" && night)
+    {
+        return "5";
+    }
+    // broken clouds
+    // 04d
+    if (icon == "mmm" && !night)
+    {
+        return "Y";
+    }
+    // 04n
+    if (icon == "mmm" && night)
+    {
+        return "%";
+    }
+    // shower rain
+    // 09d
+    if (icon == "//" && !night)
+    {
+        return "R";
+    }
+    // 09n
+    if (icon == "//" && night)
+    {
+        return "8";
+    }
+    // rain
+    // 10d
+    if (icon == "/" && !night)
+    {
+        return "Q";
+    }
+    // 10n
+    if (icon == "/" && night)
+    {
+        return "7";
+    }
+    // thunderstorm
+    // 11d
+    if (icon == "/!/" && !night)
+    {
+        return "P";
+    }
+    // 11n
+    if (icon == "/!/" && night)
+    {
+        return "6";
+    }
+    // snow
+    // 13d
+    if (icon == "*" && !night)
+    {
+        return "W";
+    }
+    // 13n
+    if (icon == "*" && night)
+    {
+        return "#";
+    }
+    // mist
+    // 50d
+    if (icon == "=" && !night)
+    {
+        return "M";
+    }
+    // 50n
+    if (icon == "=" && night)
+    {
+        return "M";
+    }
+    // Nothing matched: N/A
+    Serial.println(icon);
+    return ")";
+}
+
+void weatherFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString(64 + x, 38 + y, cur_condition);
+
+    display->setFont(ArialMT_Plain_24);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    String temp = cur_temp + "C°";
+    display->drawString(60 + x, 5 + y, temp);
+
+    display->setFont(Meteocons_Plain_36);
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString(32 + x, 0 + y, getMeteoconIcon(cur_icon));
+}
+
+void drawProgress(OLEDDisplay *display, int percentage, String label)
+{
+    display->clear();
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->setFont(ArialMT_Plain_10);
+    display->drawString(64, 10, label);
+    display->drawProgressBar(2, 28, 124, 10, percentage);
+    display->display();
+}
+
+void DateTimeFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    now = time(nullptr);
+    struct tm *timeInfo;
+    timeInfo = localtime(&now);
+    char buff[16];
+
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->setFont(ArialMT_Plain_16);
+    String date = weekDays[timeInfo->tm_wday];
+
+    sprintf_P(buff, PSTR("%s, %02d/%02d/%04d"), weekDays[timeInfo->tm_wday].c_str(), timeInfo->tm_mday, timeInfo->tm_mon + 1, timeInfo->tm_year + 1900);
+    display->drawString(64 + x, 2 + y, String(buff));
+    display->setFont(ArialMT_Plain_24);
+
+    sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+    display->drawString(64 + x, 19 + y, String(buff));
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+}
+
+FrameCallback frames[] = {DateTimeFrame, weatherFrame, customFrame, customFrame, customFrame, customFrame};
+OverlayCallback overlays[] = {msOverlay};
+int overlaysCount = 1;
+int frameCount = 2;
 
 void SettingsSaved(String result)
 {
@@ -173,16 +445,16 @@ void update_progress(int cur, int total)
     int percent = (100 * cur) / total;
     Serial.println(percent);
 
-    gfx.display();
+    display.display();
     if (percent != last_percent)
     {
         uint8_t light = percent / 12.5;
         ButtonManager.setButtonLight(light, 1);
         ButtonManager.tick();
-        gfx.clear();
-        gfx.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
+        display.clear();
+        display.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
         last_percent = percent;
-        gfx.display();
+        display.display();
     }
 }
 
@@ -196,144 +468,185 @@ void handleLoadOptions()
 }
 
 // function to load screens from JSON file
-bool loadScreens()
+bool loadCustomScreens()
 {
-    File file = FILESYSTEM.open("/screens.json", "r");
-    if (!file)
+    if (FILESYSTEM.exists("/pages.json"))
     {
-        Serial.println("Failed to open screens.json file");
-        return false;
+        File file = FILESYSTEM.open("/pages.json", "r");
+        if (!file)
+        {
+            Serial.println("Failed to open pages.json file");
+            return false;
+        }
+        DeserializationError error = deserializeJson(pages, file);
+        if (error)
+        {
+            Serial.println("Failed to parse pages.json file");
+            return false;
+        }
+       
+        frameCount = frameCount + pages.size();
+        Serial.println(frameCount);
     }
-    DeserializationError error = deserializeJson(screens, file);
-    if (error)
-    {
-        Serial.println("Failed to parse screens.json file");
-        return false;
-    }
-    numScreens = screens.size();
     return true;
 }
 
 void SystemManager_::setup()
 {
-    delay(2000);
-    gfx.init();
-    gfx.flipScreenVertically();
-    gfx.clear(); // clear the internal memory
-    gfx.drawXbm(0, 0, 128, 64, logo);
-
-    gfx.display();
 
     delay(2000);
-    gfx.clear();
-    gfx.setFont(ArialMT_Plain_24);
-    gfx.drawString(45, 20, "v" + String(VERSION));
-    gfx.display();
-    delay(800);
-
-    // FILESYSTEM INIT
     startFilesystem();
+    if (CUSTOM_PAGES)
+        loadCustomScreens();
+    ui.setTargetFPS(60);
+    ui.setIndicatorPosition(BOTTOM);      // You can change this to TOP, LEFT, BOTTOM, RIGHT
+    ui.setIndicatorDirection(LEFT_RIGHT); // Defines where the first frame is located in the bar
+    ui.setFrameAnimation(SLIDE_LEFT);     // You can change the transition that is used SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
+    ui.setTimePerTransition(500);
+    ui.setFrames(frames, frameCount);        // Add frames
+    ui.setOverlays(overlays, overlaysCount); // Add overlays
+    ui.init();                               // Initialising the UI will init the display too.
+    display.flipScreenVertically();
+    display.clear();
+    display.drawXbm(0, 0, 128, 64, logo);
+    display.display();
+    delay(1500);
+    display.clear();
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(45, 20, "v" + String(VERSION));
+    display.display();
+    delay(800);
 
     if (loadOptions())
         Serial.println(F("Application option loaded"));
     else
         Serial.println(F("Application options NOT loaded!"));
+    MY_CITY = CITY;
+    ui.setTimePerFrame(TIME_PER_FRAME);
+    display.clear();
 
-    gfx.clear();
-    gfx.setFont(ArialMT_Plain_16);
-    gfx.drawString(10, 5, "Connecting");
-    gfx.drawString(10, 30, "to WiFi...");
-    gfx.display();
-    // Try to connect to stored SSID, start AP if fails after timeout
+    drawProgress(&display, 0, "Connecting to WiFi");
     IPAddress myIP = mws.startWiFi(15000, "SmartPusher", "12345678");
-
-    // Configure /setup page and start Web Server
     mws.addOptionBox("MQTT");
-    mws.addOption("Broker", mqtthost);
-    mws.addOption("Port", mqttport);
-    mws.addOption("Username", mqttuser);
-    mws.addOption("Password", mqttpass);
-    mws.addOption("Prefix", mqttprefix);
+    mws.addOption("Homeassistant Discovery", HA_DISCOVERY);
+    mws.addOption("Broker", MQTT_HOST);
+    mws.addOption("Port", MQTT_PORT);
+    mws.addOption("Username", MQTT_USER);
+    mws.addOption("Password", MQTT_PASS);
+    mws.addOption("Prefix", MQTT_PREFIX);
     mws.addOptionBox("Buttons");
-    mws.addOption("Pushmode for Button 1", btn1push);
-    mws.addOption("Pushmode for Button 2", btn2push);
-    mws.addOption("Pushmode for Button 3", btn3push);
-    mws.addOption("Pushmode for Button 4", btn4push);
-    mws.addOption("Pushmode for Button 5", btn5push);
-    mws.addOption("Pushmode for Button 6", btn6push);
-    mws.addOption("Pushmode for Button 7", btn7push);
-    mws.addOption("Pushmode for Button 8", btn8push);
+    mws.addDropdownList("LED Mode", dropdownList, LIST_SIZE);
+    mws.addOption("Pushmode for Button 1", BTN1_PUSH);
+    mws.addOption("Pushmode for Button 2", BTN2_PUSH);
+    mws.addOption("Pushmode for Button 3", BTN3_PUSH);
+    mws.addOption("Pushmode for Button 4", BTN4_PUSH);
+    mws.addOption("Pushmode for Button 5", BTN5_PUSH);
+    mws.addOption("Pushmode for Button 6", BTN6_PUSH);
+    mws.addOption("Pushmode for Button 7", BTN7_PUSH);
+    mws.addOption("Pushmode for Button 8", BTN8_PUSH);
     mws.addOptionBox("NTP");
-    mws.addOption("NTP Server", NTPServer);
-    mws.addOption("Timezone", NTPTZ);
+    mws.addOption("NTP Server", NTP_SERVER);
+    mws.addOption("Timezone", NTP_TZ);
     mws.addOptionBox("General");
-    mws.addOption("Time colon blink", colonBlink);
-    mws.addOption("Use RGB buttons", rgbbuttons);
-    mws.addOption("Use customized pages", custompages);
-    mws.addOption("Actions over serial", serialOut);
+    mws.addOption("City", CITY);
+    mws.addOption("Use customized pages", CUSTOM_PAGES);
+    mws.addOption("Use RGB buttons", RGB_BUTTONS);
+    mws.addOption("Actions over serial", SERIAL_OUT);
 
-    if (mws.begin())
-    {
-        Serial.println(F("Smartpusher Web Server started on IP Address: "));
-        Serial.println(myIP);
-        Serial.println(F("Open /setup page to configure optional parameters"));
-        Serial.println(F("Open /edit page to view and edit files"));
-        Serial.println(F("Open /update page to upload firmware and filesystem updates"));
-    }
-
-    connected = mws.isConnected();
+    mws.begin();
+    connected = !(myIP == IPAddress(192, 168, 4, 1));
 
     if (!connected)
     {
-        gfx.setFont(ArialMT_Plain_16);
-        gfx.clear();
-        gfx.drawString(25, 15, "AP MODE");
-        gfx.drawString(20, 35, "192.168.4.1");
-        gfx.display();
+        display.setFont(ArialMT_Plain_16);
+        display.clear();
+        display.setTextAlignment(TEXT_ALIGN_CENTER);
+        display.drawString(64, 15, "AP MODE");
+        display.drawString(64, 35, "192.168.4.1");
+        display.display();
+        ButtonManager.blinkAll();
     }
     else
     {
-        gfx.setFont(ArialMT_Plain_16);
-        Serial.print("IP-Adresse = ");
-        Serial.println(WiFi.localIP());
-        gfx.clear();
-        gfx.drawString(20, 10, "Connected!");
-        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(WiFi.localIP().toString())) / 2, 40, WiFi.localIP().toString());
-        gfx.display();
+        drawProgress(&display, 0, String(myIP));
         connected = true;
-        delay(3000);
+        Update.onProgress(update_progress);
+        configTzTime(NTP_TZ.c_str(), NTP_SERVER.c_str());
+        MqttManager.setup();
+        drawProgress(&display, 10, "Connecting to MQTT");
+        MqttManager.tick();
+        updateData(&display);
     }
-    gfx.clear();
+    setBrightness(255);
+}
 
-    Update.onProgress(update_progress);
+void updateData(OLEDDisplay *display)
+{
+    drawProgress(display, 30, "Updating time");
+    getLocalTime(&timeInfo);
+    drawProgress(display, 50, "Updating weather");
+    HTTPClient http;
+    String url = "https://wttr.in/" + MY_CITY + "?format=j2";
+    http.begin(url);
+    int httpCode = http.GET();
+    if (httpCode == HTTP_CODE_OK)
+    {
+        String response = http.getString();
+        DeserializationError error = deserializeJson(doc, response);
+        if (error)
+        {
+            Serial.println("Error deserializing JSON data: " + String(error.c_str()));
+            return;
+        }
+        cur_temp = doc["current_condition"][0]["temp_C"].as<String>();
+        cur_condition = doc["current_condition"][0]["weatherDesc"][0]["value"].as<String>();
+    }
+    else
+    {
+        Serial.println(httpCode);
+    }
 
-    configTzTime(NTPTZ.c_str(), NTPServer.c_str());
-    getLocalTime(&timeinfo);
-    loadScreens();
+    http.end();
+
+    drawProgress(display, 70, "Updating weathericon");
+    url = "https://wttr.in/" + MY_CITY + "?format=%x";
+    http.begin(url);
+    httpCode = http.GET();
+    if (httpCode == HTTP_CODE_OK)
+    {
+        cur_icon = http.getString();
+    }
+
+    http.end();
+    FIRST_UPDATE = true;
+    drawProgress(display, 50, "Updating forecasts");
+
+    readyForWeatherUpdate = false;
+    drawProgress(display, 100, "Done!");
+    delay(1000);
 }
 
 void SystemManager_::tick()
 {
     mws.run();
-
-    if (connected)
+    if (!connected)
     {
-        switch (4)
+
+        return;
+    }
+
+    if (InternalScreen != 0)
+    {
+        switch (InternalScreen)
         {
-        case 0:
-            renderClockPage();
-            break;
         case 1:
-            renderButtonPage();
-            break;
-        case 2:
             renderMessagePage();
             break;
-        case 3:
+        case 2:
             renderImagePage();
             break;
-        case 4:
-            renderCustomPage();
+        case 3:
+            renderButtonPage();
             break;
         default:
             break;
@@ -341,35 +654,50 @@ void SystemManager_::tick()
     }
     else
     {
-        delay(50);
-    }
-}
+        if (millis() - timeSinceLastWUpdate > (1000L * UPDATE_INTERVAL_SECS))
+        {
+            readyForWeatherUpdate = true;
+            timeSinceLastWUpdate = millis();
+        }
 
-void SystemManager_::drawtext(uint8_t x, uint8_t y, String text)
-{
+        if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
+        {
+            updateData(&display);
+        }
+
+        int remainingTimeBudget = ui.update();
+
+        if (remainingTimeBudget > 0)
+        {
+            // You can do some work here
+            // Don't do stuff if you are below your
+            // time budget.
+            delay(remainingTimeBudget);
+        }
+    }
 }
 
 void SystemManager_::show()
 {
-    gfx.display();
+    display.display();
 }
 
 void SystemManager_::clear()
 {
-    gfx.clear();
+    display.clear();
 }
 
 void SystemManager_::setBrightness(uint8_t val)
 {
-    Serial.println(val);
-    gfx.setContrast(val);
+
+    display.setContrast(val);
     if (val == 0)
     {
-        gfx.displayOff();
+        display.displayOff();
     }
     else
     {
-        gfx.displayOn();
+        display.displayOn();
     };
     lastBrightness = val;
     ButtonManager.setBrightness(val);
@@ -379,14 +707,28 @@ void SystemManager_::BrightnessOnOff(boolean val)
 {
     if (val)
     {
-        gfx.displayOn();
+        display.displayOn();
         ButtonManager.setBrightness(lastBrightness);
     }
     else
     {
-        gfx.displayOff();
+        display.displayOff();
         ButtonManager.setBrightness(0);
     };
+}
+
+void SystemManager_::ShowMessage(String msg)
+{
+    MQTTMessage = msg;
+    previousMillis = millis();
+    InternalScreen = 1;
+}
+
+void SystemManager_::ShowImage(String img)
+{
+    Image = img;
+    previousMillis = millis();
+    InternalScreen = 2;
 }
 
 void SystemManager_::ShowButtonPage(uint8_t btn, const char *type)
@@ -394,40 +736,37 @@ void SystemManager_::ShowButtonPage(uint8_t btn, const char *type)
     previousMillis = millis();
     Pushtype = type;
     BtnNr = btn;
-    screen = 1;
-}
-
-void SystemManager_::ShowMessage(String msg)
-{
-    MQTTMessage = msg;
-    previousMillis = millis();
-    screen = 2;
-}
-
-void SystemManager_::ShowImage(String img)
-{
-    Image = img;
-    previousMillis = millis();
-    screen = 3;
+    InternalScreen = 3;
 }
 
 void SystemManager_::renderMessagePage()
 {
     static uint16_t start_at = 0;
-    gfx.clear();
-    gfx.setFont(ArialMT_Plain_24);
-    uint16_t firstline = gfx.drawStringMaxWidth(0, 0, 128, MQTTMessage.substring(start_at));
-    gfx.display();
+    display.clear();
+    display.setFont(ArialMT_Plain_24);
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    uint16_t firstline = display.drawStringMaxWidth(64, 0, 128, MQTTMessage.substring(start_at));
+    display.display();
+
     unsigned long currentMillis = millis();
-    if (millis() - previousMillis >= CLOCK_INTERVAL)
+    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
-        previousMillis = millis();
+        previousMillis = currentMillis;
         if (firstline != 0)
+        {
             start_at += firstline;
-        else if (MessageShown)
-            start_at = 0, screen = 0, MessageShown = false, void();
+        }
         else
+        {
+            if (MessageShown)
+            {
+                start_at = 0;
+                InternalScreen = 0;
+                MessageShown = false;
+                return;
+            }
             MessageShown = true;
+        }
     }
 }
 
@@ -435,17 +774,18 @@ void SystemManager_::renderButtonPage()
 {
     if (!TypeShown)
     {
-        gfx.clear();
-        gfx.setFont(Roboto_Black_36);
-        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(Pushtype)) / 2, 15, Pushtype);
-        gfx.display();
+        display.clear();
+        display.setFont(Roboto_Black_36);
+        display.setTextAlignment(TEXT_ALIGN_CENTER);
+        display.drawString(64, 15, Pushtype);
+        display.display();
         TypeShown = true;
     }
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    if (currentMillis - previousMillis >= 500)
     {
         previousMillis = currentMillis;
-        screen = 0;
+        InternalScreen = 0;
         TypeShown = false;
     }
 }
@@ -458,7 +798,7 @@ void SystemManager_::renderImagePage()
         File myFile = FILESYSTEM.open("/" + Image + ".bin", "r");
         if (myFile)
         {
-            gfx.clear();
+            display.clear();
             uint8_t w = myFile.read();
             uint8_t h = myFile.read();
             for (size_t y = 0; y < h; y++)
@@ -469,119 +809,36 @@ void SystemManager_::renderImagePage()
                     uint8_t b = myFile.read();
                     for (uint8_t bt = 0; bt < 8; bt++)
                     {
-                        gfx.setPixelColor(xpos++, y, (bitRead(b, bt) ? WHITE : BLACK));
+                        display.setPixelColor(xpos++, y, (bitRead(b, bt) ? WHITE : BLACK));
                     }
                 }
             }
             myFile.close();
-            gfx.display();
+            display.display();
         }
     }
     else
     {
-        gfx.setFont(ArialMT_Plain_16);
-        gfx.drawString(14, 25, "NOT FOUND!");
-        gfx.display();
+        display.setFont(ArialMT_Plain_16);
+        display.drawString(14, 25, "NOT FOUND!");
+        display.display();
     }
 
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= PICTURE_INTERVAL)
+    if (currentMillis - previousMillis >= TIME_PER_FRAME)
     {
         previousMillis = currentMillis;
-        screen = 0;
+        InternalScreen = 0;
         ImageShown = false;
     }
     SPIFFS.end();
 }
 
-void SystemManager_::renderClockPage()
-{
-    if (millis() - previousMillis >= CLOCK_INTERVAL)
-    {
-        gfx.clear();
-        previousMillis = millis();
-        weekDay = weekDays[timeinfo.tm_wday];
-        colon_switch = colonBlink ? !colon_switch : true;
-        fYear = String(1900 + timeinfo.tm_year);
-        fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
-        fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
-        gfx.setFont(ArialMT_Plain_16);
-        gfx.drawString(0, 0, fDate);
-        gfx.drawString(95, 0, weekDay);
-        gfx.setFont(DSEG14_Modern_Mini_Regular_30);
-        gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(fTime)) / 2, 25, fTime);
-        gfx.display();
-    }
-}
-
-// function to get the name of the current screen
-String getCurrentScreenName()
-{
-    int index = 0;
-    for (const auto &kv : screens.as<JsonObject>())
-    {
-        if (index == currentPage)
-        {
-            return kv.key().c_str();
-        }
-        index++;
-    }
-    return "";
-}
-
-void SystemManager_::renderCustomPage()
-{
-    if (numScreens == 0)
-    {
-        delay(50);
-        return;
-    }
-    gfx.clear();
-    String screenName = getCurrentScreenName();
-    if (screenName != "")
-    {
-        JsonArray page = screens[screenName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            int x = obj["x"];
-            int y = obj["y"];
-            int s = obj["s"];
-            switch (s)
-            {
-            case 10:
-                gfx.setFont(ArialMT_Plain_10);
-                break;
-            case 16:
-                gfx.setFont(ArialMT_Plain_16);
-                break;
-            case 24:
-                gfx.setFont(ArialMT_Plain_24);
-                break;
-            default:
-                gfx.setFont(ArialMT_Plain_10);
-                break;
-            }
-            JsonObject::iterator it = obj.begin();
-            while (it != obj.end())
-            {
-                String key = it->key().c_str();
-                if (key != "x" && key != "y"  && key != "s")
-                {
-                    String vt = it->value().as<String>();
-                    gfx.drawString(x, y, vt);
-                }
-                ++it;
-            }
-        }
-    }
-    gfx.display();
-}
-
 void SystemManager_::setCustomPageVariables(String PageName, String variableName, String Value)
 {
-    if (screens.containsKey(PageName))
+    if (pages.containsKey(PageName))
     {
-        JsonArray page = screens[PageName].as<JsonArray>();
+        JsonArray page = pages[PageName].as<JsonArray>();
         for (JsonObject obj : page)
         {
             if (obj.containsKey(variableName))
@@ -593,6 +850,6 @@ void SystemManager_::setCustomPageVariables(String PageName, String variableName
     }
     else
     {
-        Serial.println("Screen " + PageName + " not found!");
+        Serial.println("Page " + PageName + " not found!");
     }
 }
