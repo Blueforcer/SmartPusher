@@ -484,7 +484,7 @@ bool loadCustomScreens()
             Serial.println("Failed to parse pages.json file");
             return false;
         }
-       
+
         frameCount = frameCount + pages.size();
         Serial.println(frameCount);
     }
@@ -496,14 +496,13 @@ void SystemManager_::setup()
 
     delay(2000);
     startFilesystem();
-    if (CUSTOM_PAGES)
-        loadCustomScreens();
+
     ui.setTargetFPS(60);
     ui.setIndicatorPosition(BOTTOM);      // You can change this to TOP, LEFT, BOTTOM, RIGHT
     ui.setIndicatorDirection(LEFT_RIGHT); // Defines where the first frame is located in the bar
     ui.setFrameAnimation(SLIDE_LEFT);     // You can change the transition that is used SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
     ui.setTimePerTransition(500);
-    ui.setFrames(frames, frameCount);        // Add frames
+
     ui.setOverlays(overlays, overlaysCount); // Add overlays
     ui.init();                               // Initialising the UI will init the display too.
     display.flipScreenVertically();
@@ -555,7 +554,10 @@ void SystemManager_::setup()
 
     mws.begin();
     connected = !(myIP == IPAddress(192, 168, 4, 1));
+    if (CUSTOM_PAGES)
+        loadCustomScreens();
 
+    ui.setFrames(frames, frameCount); // Add frames
     if (!connected)
     {
         display.setFont(ArialMT_Plain_16);
