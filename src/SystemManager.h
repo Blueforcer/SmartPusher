@@ -9,6 +9,7 @@ private:
     SystemManager_() = default;
 
 public:
+    const char *VERSION = "1.95";
     String mqtthost;
     uint16_t mqttport = 1883;
     String mqttuser;
@@ -29,19 +30,19 @@ public:
     uint8_t ledControl = 3;
     String NTPServer = "de.pool.ntp.org";
     String NTPTZ = "CET-1CEST,M3.5.0,M10.5.0/3";
-    const char *VERSION = "1.95";
     static SystemManager_ &getInstance();
     void setup();
     void tick();
     void show();
     void clear();
-    void renderMessageScreen();
-    void renderCustomScreen();
-    void renderImageScreen();
-    void renderButtonScreen();
-    void renderClockScreen();
+    void renderMessagePage();
+    void renderCustomPage();
+    void renderImagePage();
+    void renderButtonPage();
+    void renderClockPage();
     void drawtext(uint8_t x, uint8_t y, String text);
-    void ShowButtonScreen(uint8_t btn, const char *type);
+    void ShowButtonPage(uint8_t btn, const char *type);
+    void setCustomPageVariables(String PageName, String variableName, String Value);
     void setBrightness(uint8_t val);
     void BrightnessOnOff(boolean val);
     void ShowMessage(String msg);

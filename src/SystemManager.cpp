@@ -24,6 +24,11 @@ tm timeinfo;
 uint8_t screen = 0;
 boolean connected = false;
 
+// initialize variables for screen pages
+int currentPage = 0;
+int numScreens = 0;
+StaticJsonDocument<1024> screens;
+
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
 const long PICTURE_INTERVAL = 2000;
@@ -47,6 +52,7 @@ uint8_t lastBrightness = 100;
 File fsUploadFile;
 String temp = "";
 
+bool colon_switch;
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 #define FILESYSTEM LittleFS
@@ -100,7 +106,7 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Password", mqttpass);
         mws.getOptionValue("Prefix", mqttprefix);
         mws.getOptionValue("Actions over serial", serialOut);
-        mws.getOptionValue("Time colon blink", colonBlink);
+        // mws.getOptionValue("Time colon blink", colonBlink);
         return true;
     }
     else
@@ -187,6 +193,25 @@ void handleLoadOptions()
     // loadOptions();
     Serial.println(F("Application option loaded after web request"));
     webRequest->send(200, "text/plain", "Options loaded");
+}
+
+// function to load screens from JSON file
+bool loadScreens()
+{
+    File file = FILESYSTEM.open("/screens.json", "r");
+    if (!file)
+    {
+        Serial.println("Failed to open screens.json file");
+        return false;
+    }
+    DeserializationError error = deserializeJson(screens, file);
+    if (error)
+    {
+        Serial.println("Failed to parse screens.json file");
+        return false;
+    }
+    numScreens = screens.size();
+    return true;
 }
 
 void SystemManager_::setup()
@@ -284,6 +309,7 @@ void SystemManager_::setup()
 
     configTzTime(NTPTZ.c_str(), NTPServer.c_str());
     getLocalTime(&timeinfo);
+    loadScreens();
 }
 
 void SystemManager_::tick()
@@ -292,19 +318,22 @@ void SystemManager_::tick()
 
     if (connected)
     {
-        switch (screen)
+        switch (4)
         {
         case 0:
-            renderClockScreen();
+            renderClockPage();
             break;
         case 1:
-            renderButtonScreen();
+            renderButtonPage();
             break;
         case 2:
-            renderMessageScreen();
+            renderMessagePage();
             break;
         case 3:
-            renderImageScreen();
+            renderImagePage();
+            break;
+        case 4:
+            renderCustomPage();
             break;
         default:
             break;
@@ -360,27 +389,7 @@ void SystemManager_::BrightnessOnOff(boolean val)
     };
 }
 
-const char *SystemManager_::getValue(const char *tag)
-{
-    return 0;
-}
-
-boolean SystemManager_::getBool(const char *tag)
-{
-    return false;
-}
-
-String SystemManager_::getString(const char *tag)
-{
-    return "";
-}
-
-int SystemManager_::getInt(const char *tag)
-{
-    return 0;
-}
-
-void SystemManager_::ShowButtonScreen(uint8_t btn, const char *type)
+void SystemManager_::ShowButtonPage(uint8_t btn, const char *type)
 {
     previousMillis = millis();
     Pushtype = type;
@@ -402,37 +411,27 @@ void SystemManager_::ShowImage(String img)
     screen = 3;
 }
 
-void SystemManager_::renderMessageScreen()
+void SystemManager_::renderMessagePage()
 {
     static uint16_t start_at = 0;
     gfx.clear();
     gfx.setFont(ArialMT_Plain_24);
     uint16_t firstline = gfx.drawStringMaxWidth(0, 0, 128, MQTTMessage.substring(start_at));
     gfx.display();
-
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    if (millis() - previousMillis >= CLOCK_INTERVAL)
     {
-        previousMillis = currentMillis;
+        previousMillis = millis();
         if (firstline != 0)
-        {
             start_at += firstline;
-        }
+        else if (MessageShown)
+            start_at = 0, screen = 0, MessageShown = false, void();
         else
-        {
-            if (MessageShown)
-            {
-                start_at = 0;
-                screen = 0;
-                MessageShown = false;
-                return;
-            }
             MessageShown = true;
-        }
     }
 }
 
-void SystemManager_::renderButtonScreen()
+void SystemManager_::renderButtonPage()
 {
     if (!TypeShown)
     {
@@ -451,44 +450,30 @@ void SystemManager_::renderButtonScreen()
     }
 }
 
-void SystemManager_::renderImageScreen()
+void SystemManager_::renderImagePage()
 {
-    gfx.clear();
-    uint8_t h;
-    uint8_t w;
-    uint8_t xpos;
-    uint8_t b;
-    if (SPIFFS.exists("/" + Image + ".bin"))
+    if (FILESYSTEM.exists("/" + Image + ".bin"))
     {
-        File myFile = SPIFFS.open("/" + Image + ".bin", "r");
+
+        File myFile = FILESYSTEM.open("/" + Image + ".bin", "r");
         if (myFile)
         {
-            w = myFile.read(); // read the dimension of the bitmap
-            h = myFile.read();
+            gfx.clear();
+            uint8_t w = myFile.read();
+            uint8_t h = myFile.read();
             for (size_t y = 0; y < h; y++)
             {
-                xpos = 0;
+                uint8_t xpos = 0;
                 for (size_t i = 0; i < (w / 8); i++)
                 {
+                    uint8_t b = myFile.read();
+                    for (uint8_t bt = 0; bt < 8; bt++)
                     {
-                        b = myFile.read();
-                        for (uint8_t bt = 0; bt < 8; bt++)
-                        {
-                            if (bitRead(b, bt))
-                            { // check one pixel
-                                gfx.setPixelColor(xpos, y, WHITE);
-                            }
-                            else
-                            {
-                                gfx.setPixelColor(xpos, y, BLACK);
-                            }
-                            xpos++;
-                        }
+                        gfx.setPixelColor(xpos++, y, (bitRead(b, bt) ? WHITE : BLACK));
                     }
                 }
             }
-
-            myFile.close(); // all done, close the file
+            myFile.close();
             gfx.display();
         }
     }
@@ -506,41 +491,108 @@ void SystemManager_::renderImageScreen()
         screen = 0;
         ImageShown = false;
     }
+    SPIFFS.end();
 }
 
-void SystemManager_::renderCustomScreen()
+void SystemManager_::renderClockPage()
 {
-}
-
-void SystemManager_::renderClockScreen()
-{
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= CLOCK_INTERVAL)
+    if (millis() - previousMillis >= CLOCK_INTERVAL)
     {
-        // getLocalTime(&timeinfo);
         gfx.clear();
-
-        previousMillis = currentMillis;
+        previousMillis = millis();
         weekDay = weekDays[timeinfo.tm_wday];
-        bool colon_switch;
-        if (colonBlink) // conf.getBool("colonblink")
-        {
-            colon_switch = !colon_switch;
-        }
-        else
-        {
-            colon_switch = true;
-        }
-
+        colon_switch = colonBlink ? !colon_switch : true;
         fYear = String(1900 + timeinfo.tm_year);
         fDate = (timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) + "/" + (timeinfo.tm_mon + 1 < 10 ? "0" : "") + String(timeinfo.tm_mon + 1);
         fTime = (timeinfo.tm_hour < 10 ? "0" : "") + String(timeinfo.tm_hour) + (colon_switch ? ":" : " ") + (timeinfo.tm_min < 10 ? "0" : "") + String(timeinfo.tm_min);
         gfx.setFont(ArialMT_Plain_16);
         gfx.drawString(0, 0, fDate);
-        gfx.setFont(ArialMT_Plain_16);
         gfx.drawString(95, 0, weekDay);
         gfx.setFont(DSEG14_Modern_Mini_Regular_30);
         gfx.drawString((DISPLAY_WIDTH - gfx.getStringWidth(fTime)) / 2, 25, fTime);
         gfx.display();
+    }
+}
+
+// function to get the name of the current screen
+String getCurrentScreenName()
+{
+    int index = 0;
+    for (const auto &kv : screens.as<JsonObject>())
+    {
+        if (index == currentPage)
+        {
+            return kv.key().c_str();
+        }
+        index++;
+    }
+    return "";
+}
+
+void SystemManager_::renderCustomPage()
+{
+    if (numScreens == 0)
+    {
+        delay(50);
+        return;
+    }
+    gfx.clear();
+    String screenName = getCurrentScreenName();
+    if (screenName != "")
+    {
+        JsonArray page = screens[screenName].as<JsonArray>();
+        for (JsonObject obj : page)
+        {
+            int x = obj["x"];
+            int y = obj["y"];
+            int s = obj["s"];
+            switch (s)
+            {
+            case 10:
+                gfx.setFont(ArialMT_Plain_10);
+                break;
+            case 16:
+                gfx.setFont(ArialMT_Plain_16);
+                break;
+            case 24:
+                gfx.setFont(ArialMT_Plain_24);
+                break;
+            default:
+                gfx.setFont(ArialMT_Plain_10);
+                break;
+            }
+            JsonObject::iterator it = obj.begin();
+            while (it != obj.end())
+            {
+                String key = it->key().c_str();
+                if (key != "x" && key != "y"  && key != "s")
+                {
+                    String vt = it->value().as<String>();
+                    gfx.drawString(x, y, vt);
+                }
+                ++it;
+            }
+        }
+    }
+    gfx.display();
+}
+
+void SystemManager_::setCustomPageVariables(String PageName, String variableName, String Value)
+{
+    if (screens.containsKey(PageName))
+    {
+        JsonArray page = screens[PageName].as<JsonArray>();
+        for (JsonObject obj : page)
+        {
+            if (obj.containsKey(variableName))
+            {
+                obj[variableName] = Value;
+                return;
+            }
+        }
+    }
+    else
+    {
+        Serial.println("Screen " + PageName + " not found!");
     }
 }

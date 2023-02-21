@@ -1,7 +1,7 @@
 /* 
   SmartPusher
     
-  Copyright (c) 2022, Blueforcer
+  Copyright (c) 2023, Blueforcer
   admin@blueforcer.de
   All rights reserved.
 

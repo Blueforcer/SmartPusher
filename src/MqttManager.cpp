@@ -106,6 +106,18 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
         SystemManager.ShowImage(strPayload);
         return;
     }
+
+    if (strTopic.startsWith(SystemManager.mqttprefix + "/custompage/"))
+    {
+        int firstSlash = strTopic.indexOf("/") + 1;
+        int secondSlash = strTopic.indexOf("/", firstSlash) + 1;
+        String screenName = strTopic.substring(secondSlash, strTopic.indexOf("/", secondSlash));
+        String variableName = strTopic.substring(strTopic.lastIndexOf("/") + 1);
+        SystemManager.setCustomPageVariables(screenName, variableName, strPayload);
+
+        return;
+    }
+
     for (int i = 0; i < 8; i++)
     {
         if (strTopic == SystemManager.mqttprefix + String("/button" + String(i + 1) + "/state"))
@@ -127,6 +139,7 @@ void onMqttConnected()
     mqtt.subscribe((SystemManager.mqttprefix + String("/brightness")).c_str());
     mqtt.subscribe((SystemManager.mqttprefix + String("/message")).c_str());
     mqtt.subscribe((SystemManager.mqttprefix + String("/image")).c_str());
+    mqtt.subscribe((SystemManager.mqttprefix + String("/custompage/#")).c_str());
 
     for (int i = 1; i < 9; i++)
     {

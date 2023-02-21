@@ -64,7 +64,6 @@ AceButton *ButtonManager_::getButton(uint8_t index)
 
 void ButtonManager_::setBrightness(uint8_t val)
 {
-  
 
     for (int i = 0; i < 8; i++)
     {
@@ -202,7 +201,7 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 
     if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen(btn, "Click");
+        SystemManager.ShowButtonPage(btn, "Click");
         ShowAnimation(1, btn);
         SendState(1, btn);
     }
@@ -212,7 +211,7 @@ void ButtonManager_::handleDoubleClick(uint8_t btn)
 {
     if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen(btn, "Double");
+        SystemManager.ShowButtonPage(btn, "Double");
         ShowAnimation(2, btn);
         SendState(2, btn);
     }
@@ -223,7 +222,7 @@ void ButtonManager_::handleLongClick(uint8_t btn)
 
     if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen(btn, "Long");
+        SystemManager.ShowButtonPage(btn, "Long");
         ShowAnimation(3, btn);
         SendState(3, btn);
     }
@@ -233,7 +232,7 @@ void ButtonManager_::handlePressed(uint8_t btn)
 {
     if (getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen(btn, "Down");
+        SystemManager.ShowButtonPage(btn, "Down");
         ShowAnimation(4, btn);
         SendState(4, btn);
     }
@@ -243,21 +242,21 @@ void ButtonManager_::handleReleased(uint8_t btn)
 {
     if (getPushSetting(btn))
     {
-        SystemManager.ShowButtonScreen(btn, "Up");
+        SystemManager.ShowButtonPage(btn, "Up");
         ShowAnimation(5, btn);
         SendState(5, btn);
     }
 }
 
-
-void serialOutput(uint8_t btn, uint8_t type) {
-  String Str = "SP"+String(btn) + String(type);
-  Serial.println(Str);
+void serialOutput(uint8_t btn, uint8_t type)
+{
+    String Str = "SP" + String(btn) + String(type);
+    Serial.println(Str);
 }
 
 void ButtonManager_::SendState(int type, uint8_t btn)
 {
-    serialOutput(btn,type);
+    serialOutput(btn, type);
     switch (type)
     {
     case 1:
@@ -352,7 +351,7 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 
 void ButtonManager_::setStates()
 {
-    
+
     if (SystemManager.ledControl != 4)
     {
 
