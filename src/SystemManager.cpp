@@ -25,7 +25,7 @@ OLEDDisplayUi ui(&display);
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 
-const char *VERSION = "2.1";
+const char *VERSION = "2.11";
 
 time_t now;
 tm timeInfo;

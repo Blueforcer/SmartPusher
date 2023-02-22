@@ -9,7 +9,7 @@ private:
     SystemManager_() = default;
 
 public:
-    const char *VERSION = "2.1";
+    const char *VERSION = "2.11";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
