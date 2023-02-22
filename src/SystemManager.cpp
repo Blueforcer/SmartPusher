@@ -25,7 +25,7 @@ OLEDDisplayUi ui(&display);
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 
-const char *VERSION = "2.00";
+const char *VERSION = "2.1";
 
 time_t now;
 tm timeInfo;
@@ -142,7 +142,7 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Homeassistant Discovery", HA_DISCOVERY);
         mws.getOptionValue("Duration per Page", TIME_PER_FRAME);
         mws.getOptionValue("Transistion duration", TIME_PER_TRANSITION);
-        // mws.getOptionValue("Time colon blink", colonBlink);
+        mws.getOptionValue("Control with Button 7&8", PAGE_BUTTONS);
         return true;
     }
     else
@@ -175,6 +175,7 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("City", CITY);
     mws.saveOptionValue("Duration per Page", TIME_PER_FRAME);
     mws.saveOptionValue("Transistion duration", TIME_PER_TRANSITION);
+    mws.saveOptionValue("Control with Button 7&8", PAGE_BUTTONS);
     Serial.println(F("Application options saved."));
 }
 
@@ -526,6 +527,8 @@ void SystemManager_::setup()
     MY_CITY = CITY;
     ui.setTimePerFrame(TIME_PER_FRAME);
     ui.setTimePerTransition(TIME_PER_TRANSITION);
+    if (PAGE_BUTTONS)
+        ui.disableAutoTransition();
     display.clear();
 
     drawProgress(&display, 0, "Connecting to WiFi");
@@ -550,13 +553,14 @@ void SystemManager_::setup()
     mws.addOptionBox("NTP");
     mws.addOption("NTP Server", NTP_SERVER);
     mws.addOption("Timezone", NTP_TZ);
-    mws.addHTML("<p>Find your timezone at <a href='https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv' target='_blank' rel='noopener noreferrer'>posix_tz_db</a>.</p>","tz_link");
+    mws.addHTML("<p>Find your timezone at <a href='https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv' target='_blank' rel='noopener noreferrer'>posix_tz_db</a>.</p>", "tz_link");
     mws.addOptionBox("General");
     mws.addOption("Use RGB buttons", RGB_BUTTONS);
     mws.addOption("Actions over serial", SERIAL_OUT);
-    mws.addHTML("<h3>Weather</h3>","weather_settings");
+    mws.addHTML("<h3>Weather</h3>", "weather_settings");
     mws.addOption("City", CITY);
-    mws.addHTML("<h3>Page Settings</h3>","page_settings");
+    mws.addHTML("<h3>Page Settings</h3>", "page_settings");
+    mws.addOption("Control with Button 7&8", PAGE_BUTTONS);
     mws.addOption("Use customized pages", CUSTOM_PAGES);
     mws.addOption("Duration per Page", TIME_PER_FRAME);
     mws.addOption("Transistion duration", TIME_PER_TRANSITION);
@@ -863,4 +867,14 @@ void SystemManager_::setCustomPageVariables(String PageName, String variableName
     {
         Serial.println("Page " + PageName + " not found!");
     }
+}
+
+void SystemManager_::nextPage()
+{
+    ui.nextFrame();
+}
+
+void SystemManager_::previousPage()
+{
+    ui.previousFrame();
 }

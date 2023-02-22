@@ -43,7 +43,6 @@ void ButtonManager_::setup()
         ButtonConfig::kFeatureSuppressClickBeforeDoubleClick);
     buttonConfig->setClickDelay(300);
     buttonConfig->setDoubleClickDelay(600);
-
 }
 
 void ButtonManager_::tick()
@@ -87,8 +86,6 @@ void ButtonManager_::blinkAll()
         leds[i].Breathe(1000).Forever();
     }
 }
-
-
 
 void ButtonManager_::checkButtons()
 {
@@ -211,9 +208,24 @@ void ButtonManager_::handleSingleClick(uint8_t btn)
 
     if (!getPushSetting(btn))
     {
-        SystemManager.ShowButtonPage(btn, "Click");
-        ShowAnimation(1, btn);
-        SendState(1, btn);
+        if (SystemManager.PAGE_BUTTONS && ((btn == 6) || (btn == 7)))
+        {
+            if (btn == 6)
+            {
+                SystemManager.previousPage();
+            }
+            else
+            {
+                SystemManager.nextPage();
+            }
+            leds[btn].Breathe(SystemManager.TIME_PER_TRANSITION);
+        }
+        else
+        {
+            SystemManager.ShowButtonPage(btn, "Click");
+            ShowAnimation(1, btn);
+            SendState(1, btn);
+        }
     }
 }
 

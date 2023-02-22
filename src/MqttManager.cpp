@@ -257,7 +257,7 @@ void MqttManager_::setup()
         btn8.setName("Button 8");
         btn8.setValue("-");
     }
-      connect();
+    connect();
 }
 
 void MqttManager_::tick()
@@ -270,6 +270,8 @@ void MqttManager_::tick()
 
 void MqttManager_::publish(const char *topic, const char *payload)
 {
+    if (!mqtt.isConnected())
+        return;
     char result[100];
     strcpy(result, SystemManager.MQTT_PREFIX.c_str());
     strcat(result, "/");
@@ -279,6 +281,8 @@ void MqttManager_::publish(const char *topic, const char *payload)
 
 void MqttManager_::HAState(uint8_t btn, const char *state)
 {
+    if (!mqtt.isConnected())
+        return;
     switch (btn)
     {
     case 0:

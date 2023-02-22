@@ -9,7 +9,7 @@ private:
     SystemManager_() = default;
 
 public:
-    const char *VERSION = "2.00";
+    const char *VERSION = "2.1";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
@@ -29,6 +29,7 @@ public:
     bool CUSTOM_PAGES = false;
     bool SERIAL_OUT = false;
     bool HA_DISCOVERY = false;
+    bool PAGE_BUTTONS = false;
     String ledMode = "On";
     int TIME_PER_FRAME = 5000;
     int TIME_PER_TRANSITION = 500;
@@ -44,6 +45,8 @@ public:
     void renderImagePage();
     void renderButtonPage();
     void renderClockPage();
+    void nextPage();
+    void previousPage();
     void renderWeatherPage();
     void drawtext(uint8_t x, uint8_t y, String text);
     void ShowButtonPage(uint8_t btn, const char *type);
