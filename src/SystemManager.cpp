@@ -140,6 +140,8 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("LED Mode", ledMode);
         mws.getOptionValue("City", CITY);
         mws.getOptionValue("Homeassistant Discovery", HA_DISCOVERY);
+        mws.getOptionValue("Duration per Page", TIME_PER_FRAME);
+        mws.getOptionValue("Transistion duration", TIME_PER_TRANSITION);
         // mws.getOptionValue("Time colon blink", colonBlink);
         return true;
     }
@@ -171,6 +173,8 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Actions over serial", SERIAL_OUT);
     mws.saveOptionValue("LED Mode", ledMode);
     mws.saveOptionValue("City", CITY);
+    mws.saveOptionValue("Duration per Page", TIME_PER_FRAME);
+    mws.saveOptionValue("Transistion duration", TIME_PER_TRANSITION);
     Serial.println(F("Application options saved."));
 }
 
@@ -501,7 +505,6 @@ void SystemManager_::setup()
     ui.setIndicatorPosition(BOTTOM);      // You can change this to TOP, LEFT, BOTTOM, RIGHT
     ui.setIndicatorDirection(LEFT_RIGHT); // Defines where the first frame is located in the bar
     ui.setFrameAnimation(SLIDE_LEFT);     // You can change the transition that is used SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
-    ui.setTimePerTransition(500);
 
     ui.setOverlays(overlays, overlaysCount); // Add overlays
     ui.init();                               // Initialising the UI will init the display too.
@@ -522,17 +525,18 @@ void SystemManager_::setup()
         Serial.println(F("Application options NOT loaded!"));
     MY_CITY = CITY;
     ui.setTimePerFrame(TIME_PER_FRAME);
+    ui.setTimePerTransition(TIME_PER_TRANSITION);
     display.clear();
 
     drawProgress(&display, 0, "Connecting to WiFi");
     IPAddress myIP = mws.startWiFi(15000, "SmartPusher", "12345678");
     mws.addOptionBox("MQTT");
-    mws.addOption("Homeassistant Discovery", HA_DISCOVERY);
     mws.addOption("Broker", MQTT_HOST);
     mws.addOption("Port", MQTT_PORT);
     mws.addOption("Username", MQTT_USER);
     mws.addOption("Password", MQTT_PASS);
     mws.addOption("Prefix", MQTT_PREFIX);
+    mws.addOption("Homeassistant Discovery", HA_DISCOVERY);
     mws.addOptionBox("Buttons");
     mws.addDropdownList("LED Mode", dropdownList, LIST_SIZE);
     mws.addOption("Pushmode for Button 1", BTN1_PUSH);
@@ -546,11 +550,16 @@ void SystemManager_::setup()
     mws.addOptionBox("NTP");
     mws.addOption("NTP Server", NTP_SERVER);
     mws.addOption("Timezone", NTP_TZ);
+    mws.addHTML("<p>Find your timezone at <a href='https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv' target='_blank' rel='noopener noreferrer'>posix_tz_db</a>.</p>","tz_link");
     mws.addOptionBox("General");
-    mws.addOption("City", CITY);
-    mws.addOption("Use customized pages", CUSTOM_PAGES);
     mws.addOption("Use RGB buttons", RGB_BUTTONS);
     mws.addOption("Actions over serial", SERIAL_OUT);
+    mws.addHTML("<h3>Weather</h3>","weather_settings");
+    mws.addOption("City", CITY);
+    mws.addHTML("<h3>Page Settings</h3>","page_settings");
+    mws.addOption("Use customized pages", CUSTOM_PAGES);
+    mws.addOption("Duration per Page", TIME_PER_FRAME);
+    mws.addOption("Transistion duration", TIME_PER_TRANSITION);
 
     mws.begin();
     connected = !(myIP == IPAddress(192, 168, 4, 1));

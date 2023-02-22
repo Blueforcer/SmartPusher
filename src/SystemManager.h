@@ -31,7 +31,7 @@ public:
     bool HA_DISCOVERY = false;
     String ledMode = "On";
     int TIME_PER_FRAME = 5000;
-
+    int TIME_PER_TRANSITION = 500;
     String NTP_SERVER = "de.pool.ntp.org";
     String NTP_TZ = "CET-1CEST,M3.5.0,M10.5.0/3";
     static SystemManager_ &getInstance();
