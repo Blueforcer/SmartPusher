@@ -24,6 +24,11 @@ void FSWebServer::addHandler(const Uri &uri, HTTPMethod method, WebServerClass::
     webserver->on(uri, method, fn);
 }
 
+void FSWebServer::addHandler(const Uri &uri, HTTPMethod method, WebServerClass::THandlerFunction fn1, WebServerClass::THandlerFunction fn2)
+{
+    webserver->on(uri, method, fn1, fn2);
+}
+
 void FSWebServer::addHandler(const Uri &uri, WebServerClass::THandlerFunction handler)
 {
     webserver->on(uri, HTTP_ANY, handler);

@@ -18,7 +18,7 @@
 
 SSD1306 display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
-
+File fsUploadFile;
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
 
@@ -391,6 +391,17 @@ void weatherFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, in
     display->drawString(32 + x, 0 + y, getMeteoconIcon(cur_icon));
 }
 
+void drawProgress(OLEDDisplay *display, int percentage, String label, String adInfo)
+{
+    display->clear();
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->setFont(ArialMT_Plain_10);
+    display->drawString(64, 10, label);
+    display->drawProgressBar(2, 28, 124, 10, percentage);
+    display->drawString(64, 50, adInfo);
+    display->display();
+}
+
 void drawProgress(OLEDDisplay *display, int percentage, String label)
 {
     display->clear();
@@ -491,9 +502,106 @@ bool loadCustomScreens()
         }
 
         frameCount = frameCount + pages.size();
-        Serial.println(frameCount);
     }
     return true;
+}
+
+static const char save_btn_htm[] PROGMEM = R"EOF(
+<form action="/converter" method="POST" enctype="multipart/form-data">
+        <label for="file">Wähle eine Datei aus:</label>
+        <input type="file" name="file" id="file">
+        <br>
+        <input type="submit" value="Hochladen">
+    </form>
+)EOF";
+
+void handleConverterUpload()
+{
+    String filename;
+    Serial.println("File incoming..");
+    WebServerClass *webRequest = mws.getRequest();
+    HTTPUpload &upload = webRequest->upload();
+    if (upload.status == UPLOAD_FILE_START)
+    {
+        filename = upload.filename;
+        Serial.println(filename);
+        if (!filename.startsWith("/"))
+            filename = "/" + filename;
+        Serial.print("handleFileUpload Name: ");
+        Serial.println(filename);
+        fsUploadFile = FILESYSTEM.open(filename, "w"); // Open the file for writing in SPIFFS (create if it doesn't exist)
+        filename = String();
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE)
+    {
+        if (fsUploadFile)
+            fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
+    }
+    else if (upload.status == UPLOAD_FILE_END)
+    {
+        if (fsUploadFile)
+        { // If the file was successfully created
+            Serial.print("handleFileUpload Size: ");
+            Serial.println(upload.totalSize);
+            server.sendHeader("Location", "/success.html"); // Redirect the client to the success page
+            server.send(303);
+            fsUploadFile.seek(54);
+            uint16_t width = fsUploadFile.read() + (fsUploadFile.read() << 8);
+            uint16_t height = fsUploadFile.read() + (fsUploadFile.read() << 8);
+            if (fsUploadFile.read() != 1)
+            {
+                Serial.println("Falsches BMP-Format");
+               // fsUploadFile.close();
+                //return;
+            }
+            if (width > 128 || height > 64)
+            {
+                Serial.println("BMP-Auflösung zu groß");
+                //fsUploadFile.close();
+                //return;
+            }
+            uint32_t dataSize = ((width + 7) / 8) * height;
+            uint8_t *data = new uint8_t[dataSize];
+            for (int y = height - 1; y >= 0; y--)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    uint8_t pixel = fsUploadFile.read();
+                    if (x % 8 == 0)
+                    {
+                        data[x / 8 + y * ((width + 7) / 8)] = 0;
+                    }
+                    if (pixel == 0)
+                    {
+                        data[x / 8 + y * ((width + 7) / 8)] |= 1 << (x % 8);
+                    }
+                }
+                while (fsUploadFile.position() % 4 != 0)
+                {
+                    fsUploadFile.read();
+                }
+            }
+            fsUploadFile.close();
+            String binFilename = "/" + upload.filename;
+            binFilename.replace(".bmp", ".bin");
+            File binFile = FILESYSTEM.open(binFilename, FILE_WRITE);
+            if (!binFile)
+            {
+                Serial.println("Datei konnte nicht geöffnet werden");
+                return;
+            }
+            binFile.write(width);
+            binFile.write(height);
+            binFile.write(data, dataSize);
+            binFile.close();
+            delete[] data;
+            FILESYSTEM.remove(filename);
+        }
+        else
+        {
+            server.send(500, "text/plain", "500: couldn't create file");
+        }
+    }
 }
 
 void SystemManager_::setup()
@@ -564,7 +672,11 @@ void SystemManager_::setup()
     mws.addOption("Use customized pages", CUSTOM_PAGES);
     mws.addOption("Duration per Page", TIME_PER_FRAME);
     mws.addOption("Transistion duration", TIME_PER_TRANSITION);
-
+    mws.addHandler(
+        "/converter", HTTP_POST, []()
+        { mws.getRequest()->send(200); },
+        handleConverterUpload);
+    mws.getRequest()->setContentLength(10240);
     mws.begin();
     connected = !(myIP == IPAddress(192, 168, 4, 1));
     if (CUSTOM_PAGES)
@@ -583,7 +695,16 @@ void SystemManager_::setup()
     }
     else
     {
-        drawProgress(&display, 0, String(myIP));
+        display.setFont(ArialMT_Plain_16);
+        Serial.print("IP-Adresse = ");
+        Serial.println(WiFi.localIP());
+        display.clear();
+        display.setTextAlignment(TEXT_ALIGN_CENTER);
+        display.drawString(64, 10, "CONNECTED!");
+        display.drawString(64, 40, WiFi.localIP().toString());
+        display.display();
+        delay(2000);
+
         connected = true;
         Update.onProgress(update_progress);
         configTzTime(NTP_TZ.c_str(), NTP_SERVER.c_str());
