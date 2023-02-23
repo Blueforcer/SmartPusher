@@ -288,6 +288,12 @@ void customFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int
             case 24:
                 display->setFont(ArialMT_Plain_24);
                 break;
+            case 30:
+                display->setFont(Roboto_Black_30);
+                break;
+            case 36:
+                display->setFont(Roboto_Black_36);
+                break;
             default:
                 display->setFont(ArialMT_Plain_10);
                 break;
