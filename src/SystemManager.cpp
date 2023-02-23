@@ -25,7 +25,7 @@ File fsUploadFile;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 
-const char *VERSION = "2.11";
+const char *VERSION = "2.15";
 
 time_t now;
 tm timeInfo;
@@ -84,6 +84,13 @@ SystemManager_ &SystemManager_::getInstance()
     return instance;
 }
 
+IPAddress local_IP;
+
+IPAddress gateway;
+IPAddress subnet;
+IPAddress primaryDNS;
+IPAddress secondaryDNS;
+
 // Initialize the global shared instance
 SystemManager_ &SystemManager = SystemManager.getInstance();
 
@@ -139,10 +146,21 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Actions over serial", SERIAL_OUT);
         mws.getOptionValue("LED Mode", ledMode);
         mws.getOptionValue("City", CITY);
-        mws.getOptionValue("Homeassistant Discovery", HA_DISCOVERY);
+        mws.getOptionValue("Homeassistant fiscovery", HA_DISCOVERY);
         mws.getOptionValue("Duration per Page", TIME_PER_FRAME);
         mws.getOptionValue("Transistion duration", TIME_PER_TRANSITION);
         mws.getOptionValue("Control with Button 7&8", PAGE_BUTTONS);
+        mws.getOptionValue("ioBroker advertisement ", IO_BROKER);
+        mws.getOptionValue("Static IP", NET_STATIC);
+        mws.getOptionValue("Local IP", NET_IP);
+        mws.getOptionValue("Gateway", NET_GW);
+        mws.getOptionValue("Subnet", NET_SN);
+        mws.getOptionValue("Primary DNS", NET_PDNS);
+        mws.getOptionValue("Secondary DNS", NET_SDNS);
+
+        if (!local_IP.fromString(NET_IP) || !gateway.fromString(NET_GW) || !subnet.fromString(NET_SN) || !primaryDNS.fromString(NET_PDNS) || !secondaryDNS.fromString(NET_SDNS))
+            NET_STATIC = false;
+
         return true;
     }
     else
@@ -152,7 +170,7 @@ bool SystemManager_::loadOptions()
 
 void SystemManager_::saveOptions()
 {
-    mws.saveOptionValue("Homeassistant Discovery", HA_DISCOVERY);
+    mws.saveOptionValue("Homeassistant discovery", HA_DISCOVERY);
     mws.saveOptionValue("Use RGB buttons", RGB_BUTTONS);
     mws.saveOptionValue("Use customized pages", CUSTOM_PAGES);
     mws.saveOptionValue("Pushmode for Button 1", BTN1_PUSH);
@@ -176,6 +194,13 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Duration per Page", TIME_PER_FRAME);
     mws.saveOptionValue("Transistion duration", TIME_PER_TRANSITION);
     mws.saveOptionValue("Control with Button 7&8", PAGE_BUTTONS);
+    mws.saveOptionValue("ioBroker advertisement ", IO_BROKER);
+    mws.saveOptionValue("Static IP", NET_STATIC);
+    mws.saveOptionValue("Local IP", NET_IP);
+    mws.saveOptionValue("Gateway", NET_GW);
+    mws.saveOptionValue("Subnet", NET_SN);
+    mws.saveOptionValue("Primary DNS", NET_PDNS);
+    mws.saveOptionValue("Secondary DNS", NET_SDNS);
     Serial.println(F("Application options saved."));
 }
 
@@ -193,6 +218,20 @@ String getPageNameName(int index)
         i++;
     }
     return "";
+}
+
+void SystemManager_::sendCustomPageKeys()
+{
+  for (JsonPair page : pages.as<JsonObject>()) {
+    for (JsonPair obj : page.value().as<JsonArray>()[0].as<JsonObject>()) {
+      String key = obj.key().c_str();
+      if (key != "x" && key != "y" && key != "s") {
+        String value = obj.value().as<String>();
+        String topic = "custompage/" + String(page.key().c_str()) + "/" + key;
+        MqttManager.publish(topic.c_str(), value.c_str());
+      }
+    }
+  }
 }
 
 // What's displayed along the top line
@@ -468,7 +507,9 @@ void update_progress(int cur, int total)
         ButtonManager.setButtonLight(light, 1);
         ButtonManager.tick();
         display.clear();
-        display.drawString(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, String(percent) + "%");
+        display.setTextAlignment(TEXT_ALIGN_CENTER);
+        display.setFont(ArialMT_Plain_24);
+        display.drawString(64, DISPLAY_HEIGHT / 2, String(percent) + "%");
         last_percent = percent;
         display.display();
     }
@@ -541,65 +582,7 @@ void handleConverterUpload()
     {
         if (fsUploadFile)
         { // If the file was successfully created
-            Serial.print("handleFileUpload Size: ");
-            Serial.println(upload.totalSize);
-            server.sendHeader("Location", "/success.html"); // Redirect the client to the success page
-            server.send(303);
-            fsUploadFile.seek(54);
-            uint16_t width = fsUploadFile.read() + (fsUploadFile.read() << 8);
-            uint16_t height = fsUploadFile.read() + (fsUploadFile.read() << 8);
-            if (fsUploadFile.read() != 1)
-            {
-                Serial.println("Falsches BMP-Format");
-               // fsUploadFile.close();
-                //return;
-            }
-            if (width > 128 || height > 64)
-            {
-                Serial.println("BMP-Auflösung zu groß");
-                //fsUploadFile.close();
-                //return;
-            }
-            uint32_t dataSize = ((width + 7) / 8) * height;
-            uint8_t *data = new uint8_t[dataSize];
-            for (int y = height - 1; y >= 0; y--)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    uint8_t pixel = fsUploadFile.read();
-                    if (x % 8 == 0)
-                    {
-                        data[x / 8 + y * ((width + 7) / 8)] = 0;
-                    }
-                    if (pixel == 0)
-                    {
-                        data[x / 8 + y * ((width + 7) / 8)] |= 1 << (x % 8);
-                    }
-                }
-                while (fsUploadFile.position() % 4 != 0)
-                {
-                    fsUploadFile.read();
-                }
-            }
             fsUploadFile.close();
-            String binFilename = "/" + upload.filename;
-            binFilename.replace(".bmp", ".bin");
-            File binFile = FILESYSTEM.open(binFilename, FILE_WRITE);
-            if (!binFile)
-            {
-                Serial.println("Datei konnte nicht geöffnet werden");
-                return;
-            }
-            binFile.write(width);
-            binFile.write(height);
-            binFile.write(data, dataSize);
-            binFile.close();
-            delete[] data;
-            FILESYSTEM.remove(filename);
-        }
-        else
-        {
-            server.send(500, "text/plain", "500: couldn't create file");
         }
     }
 }
@@ -640,14 +623,27 @@ void SystemManager_::setup()
     display.clear();
 
     drawProgress(&display, 0, "Connecting to WiFi");
+    if (NET_STATIC)
+    {
+        WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+    }
+
     IPAddress myIP = mws.startWiFi(15000, "SmartPusher", "12345678");
+    mws.addOptionBox("Network");
+    mws.addOption("Static IP", NET_STATIC);
+    mws.addOption("Local IP", NET_IP);
+    mws.addOption("Gateway", NET_GW);
+    mws.addOption("Subnet", NET_SN);
+    mws.addOption("Primary DNS", NET_PDNS);
+    mws.addOption("Secondary DNS", NET_SDNS);
     mws.addOptionBox("MQTT");
     mws.addOption("Broker", MQTT_HOST);
     mws.addOption("Port", MQTT_PORT);
     mws.addOption("Username", MQTT_USER);
     mws.addOption("Password", MQTT_PASS);
     mws.addOption("Prefix", MQTT_PREFIX);
-    mws.addOption("Homeassistant Discovery", HA_DISCOVERY);
+    mws.addOption("Homeassistant discovery", HA_DISCOVERY);
+    mws.addOption("ioBroker advertisement ", IO_BROKER);
     mws.addOptionBox("Buttons");
     mws.addDropdownList("LED Mode", dropdownList, LIST_SIZE);
     mws.addOption("Pushmode for Button 1", BTN1_PUSH);
@@ -677,6 +673,7 @@ void SystemManager_::setup()
         { mws.getRequest()->send(200); },
         handleConverterUpload);
     mws.getRequest()->setContentLength(10240);
+
     mws.begin();
     connected = !(myIP == IPAddress(192, 168, 4, 1));
     if (CUSTOM_PAGES)

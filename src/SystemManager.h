@@ -9,7 +9,7 @@ private:
     SystemManager_() = default;
 
 public:
-    const char *VERSION = "2.11";
+    const char *VERSION = "2.15";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
@@ -30,6 +30,14 @@ public:
     bool SERIAL_OUT = false;
     bool HA_DISCOVERY = false;
     bool PAGE_BUTTONS = false;
+    bool IO_BROKER = false;
+    bool NET_STATIC = false;
+    String NET_IP = "192.168.178.10";
+    String NET_GW = "192.168.178.1";
+    String NET_SN = "255.255.255.0";
+    String NET_PDNS = "8.8.8.8";
+    String NET_SDNS = "1.1.1.1";
+
     String ledMode = "On";
     int TIME_PER_FRAME = 5000;
     int TIME_PER_TRANSITION = 700;
@@ -48,6 +56,7 @@ public:
     void nextPage();
     void previousPage();
     void renderWeatherPage();
+    void sendCustomPageKeys();
     void drawtext(uint8_t x, uint8_t y, String text);
     void ShowButtonPage(uint8_t btn, const char *type);
     void setCustomPageVariables(String PageName, String variableName, String Value);
@@ -59,7 +68,6 @@ public:
     boolean getBool(const char *name);
     bool loadOptions();
     void saveOptions();
-    
 };
 
 extern SystemManager_ &SystemManager;

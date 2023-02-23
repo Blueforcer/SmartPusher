@@ -130,39 +130,50 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 void onMqttConnected()
 {
     String prefix = SystemManager.MQTT_PREFIX;
+    if (SystemManager.IO_BROKER)
+    {
+        for (int i = 1; i < 9; i++)
+        {
+            MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
+            MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
+        }
+
+        MqttManager.publish("brightness", "255");
+        MqttManager.publish("message", "Hello from Smartpusher");
+        MqttManager.publish("image", "image");
+
+       SystemManager.sendCustomPageKeys();
+        
+    }
     for (int i = 1; i <= 8; i++)
     {
         String topic = prefix + "/button" + String(i) + "/state";
         mqtt.subscribe(topic.c_str());
     }
-    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/brightness")).c_str());
-    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/message")).c_str());
-    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/image")).c_str());
-    mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/custompage/#")).c_str());
 
-    for (int i = 1; i < 9; i++)
-    {
-        MqttManager.publish(("button" + String(i) + "/click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/double_click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/long_click").c_str(), "false");
-        MqttManager.publish(("button" + String(i) + "/push").c_str(), "false");
-    }
-
+    mqtt.subscribe((prefix + String("/brightness")).c_str());
+    mqtt.subscribe((prefix + String("/message")).c_str());
+    mqtt.subscribe((prefix + String("/image")).c_str());
+    mqtt.subscribe((prefix + String("/custompage/#")).c_str());
     Serial.println("MQTT Connected");
 }
 
 void connect()
 {
+
     mqtt.onMessage(onMqttMessage);
     mqtt.onConnected(onMqttConnected);
     if (SystemManager.MQTT_USER == "" || SystemManager.MQTT_PASS == "")
     {
-
-        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, nullptr, nullptr);
+        Serial.println("Connecting to MQTT");
+        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, nullptr, nullptr, SystemManager.MQTT_PREFIX.c_str());
     }
     else
     {
-        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, SystemManager.MQTT_USER.c_str(), SystemManager.MQTT_PASS.c_str());
+        Serial.println("Connecting to MQTT");
+        mqtt.begin(SystemManager.MQTT_HOST.c_str(), SystemManager.MQTT_PORT, SystemManager.MQTT_USER.c_str(), SystemManager.MQTT_PASS.c_str(), SystemManager.MQTT_PREFIX.c_str());
     }
 }
 
@@ -174,6 +185,7 @@ void MqttManager_::setup()
 
     if (SystemManager.HA_DISCOVERY)
     {
+        Serial.println("Starting Homeassistant discorvery");
 
         device.setUniqueId(mac, sizeof(mac));
         device.setName("SmartPusher");
@@ -256,6 +268,11 @@ void MqttManager_::setup()
         btn8.setName("Button 8");
         btn8.setValue("-");
     }
+    else
+    {
+        Serial.println("Homeassistant discovery disabled");
+        mqtt.disableHA();
+    }
     connect();
 }
 
@@ -280,6 +297,8 @@ void MqttManager_::publish(const char *topic, const char *payload)
 
 void MqttManager_::HAState(uint8_t btn, const char *state)
 {
+    if (!SystemManager.HA_DISCOVERY)
+        return;
     if (!mqtt.isConnected())
         return;
     switch (btn)
