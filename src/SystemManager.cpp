@@ -47,6 +47,7 @@ unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const int UPDATE_INTERVAL_SECS = 20 * 60; // Update every 20 minutes
 const char *Pushtype;
 
+bool hideDate;
 String MY_CITY;
 String MQTTMessage;
 String Image;
@@ -157,6 +158,7 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Subnet", NET_SN);
         mws.getOptionValue("Primary DNS", NET_PDNS);
         mws.getOptionValue("Secondary DNS", NET_SDNS);
+        mws.getOptionValue("Hide date", HIDE_DATE);
 
         if (!local_IP.fromString(NET_IP) || !gateway.fromString(NET_GW) || !subnet.fromString(NET_SN) || !primaryDNS.fromString(NET_PDNS) || !secondaryDNS.fromString(NET_SDNS))
             NET_STATIC = false;
@@ -201,6 +203,7 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Subnet", NET_SN);
     mws.saveOptionValue("Primary DNS", NET_PDNS);
     mws.saveOptionValue("Secondary DNS", NET_SDNS);
+    mws.saveOptionValue("Hide date", HIDE_DATE);
     Serial.println(F("Application options saved."));
 }
 
@@ -222,16 +225,22 @@ String getPageNameName(int index)
 
 void SystemManager_::sendCustomPageKeys()
 {
-  for (JsonPair page : pages.as<JsonObject>()) {
-    for (JsonPair obj : page.value().as<JsonArray>()[0].as<JsonObject>()) {
-      String key = obj.key().c_str();
-      if (key != "x" && key != "y" && key != "s") {
-        String value = obj.value().as<String>();
-        String topic = "custompage/" + String(page.key().c_str()) + "/" + key;
-        MqttManager.publish(topic.c_str(), value.c_str());
-      }
+    for (JsonPair page : pages.as<JsonObject>())
+    {
+        for (auto obj : page.value().as<JsonArray>())
+        {
+            for (JsonPair item : obj.as<JsonObject>())
+            {
+                String key = item.key().c_str();
+                if (key != "x" && key != "y" && key != "s")
+                {
+                    String topic = "custompage/" + String(page.key().c_str()) + "/" + key;
+                    String value = item.value().as<String>();
+                    MqttManager.publish(topic.c_str(), value.c_str());
+                }
+            }
+        }
     }
-  }
 }
 
 // What's displayed along the top line
@@ -255,7 +264,7 @@ void customFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int
     {
         pageName = getPageNameName(ui.getUiState()->currentFrame - 2);
     }
-    else
+    else if (ui.getUiState()->frameState == IN_TRANSITION)
     {
         pageName = getPageNameName(ui.getUiState()->currentFrame - 1);
     }
@@ -458,17 +467,27 @@ void DateTimeFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, i
     timeInfo = localtime(&now);
     char buff[16];
 
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->setFont(ArialMT_Plain_16);
-    String date = weekDays[timeInfo->tm_wday];
+    if (!hideDate)
+    {
+        display->setTextAlignment(TEXT_ALIGN_CENTER);
+        display->setFont(ArialMT_Plain_16);
+        String date = weekDays[timeInfo->tm_wday];
 
-    sprintf_P(buff, PSTR("%s, %02d/%02d/%04d"), weekDays[timeInfo->tm_wday].c_str(), timeInfo->tm_mday, timeInfo->tm_mon + 1, timeInfo->tm_year + 1900);
-    display->drawString(64 + x, 2 + y, String(buff));
-    display->setFont(ArialMT_Plain_24);
+        sprintf_P(buff, PSTR("%s, %02d/%02d/%04d"), weekDays[timeInfo->tm_wday].c_str(), timeInfo->tm_mday, timeInfo->tm_mon + 1, timeInfo->tm_year + 1900);
+        display->drawString(64 + x, 2 + y, String(buff));
+        display->setFont(ArialMT_Plain_24);
 
-    sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
-    display->drawString(64 + x, 19 + y, String(buff));
-    display->setTextAlignment(TEXT_ALIGN_LEFT);
+        sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+        display->drawString(64 + x, 19 + y, String(buff));
+    }
+    else
+    {
+        display->setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
+        display->setFont(Roboto_Black_30);
+        sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+        display->drawString(64 + x, 28 + y, String(buff));
+        display->setTextAlignment(TEXT_ALIGN_LEFT);
+    }
 }
 
 FrameCallback frames[] = {DateTimeFrame, weatherFrame, customFrame, customFrame, customFrame, customFrame};
@@ -616,6 +635,7 @@ void SystemManager_::setup()
     else
         Serial.println(F("Application options NOT loaded!"));
     MY_CITY = CITY;
+    hideDate = HIDE_DATE;
     ui.setTimePerFrame(TIME_PER_FRAME);
     ui.setTimePerTransition(TIME_PER_TRANSITION);
     if (PAGE_BUTTONS)
@@ -659,6 +679,7 @@ void SystemManager_::setup()
     mws.addOption("Timezone", NTP_TZ);
     mws.addHTML("<p>Find your timezone at <a href='https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv' target='_blank' rel='noopener noreferrer'>posix_tz_db</a>.</p>", "tz_link");
     mws.addOptionBox("General");
+    mws.addOption("Hide date", HIDE_DATE);
     mws.addOption("Use RGB buttons", RGB_BUTTONS);
     mws.addOption("Actions over serial", SERIAL_OUT);
     mws.addHTML("<h3>Weather</h3>", "weather_settings");

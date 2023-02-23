@@ -32,6 +32,7 @@ public:
     bool PAGE_BUTTONS = false;
     bool IO_BROKER = false;
     bool NET_STATIC = false;
+    bool HIDE_DATE=false;
     String NET_IP = "192.168.178.10";
     String NET_GW = "192.168.178.1";
     String NET_SN = "255.255.255.0";
