@@ -9,7 +9,7 @@ private:
     SystemManager_() = default;
 
 public:
-    const char *VERSION = "2.15";
+    const char *VERSION = "2.20";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
@@ -33,6 +33,7 @@ public:
     bool IO_BROKER = false;
     bool NET_STATIC = false;
     bool HIDE_DATE=false;
+    bool HIDE_SECONDS=false;
     String NET_IP = "192.168.178.10";
     String NET_GW = "192.168.178.1";
     String NET_SN = "255.255.255.0";
@@ -40,8 +41,8 @@ public:
     String NET_SDNS = "1.1.1.1";
 
     String ledMode = "On";
-    int TIME_PER_FRAME = 5000;
-    int TIME_PER_TRANSITION = 700;
+    int TIME_PER_FRAME = 7000;
+    int TIME_PER_TRANSITION = 2000;
     String NTP_SERVER = "de.pool.ntp.org";
     String NTP_TZ = "CET-1CEST,M3.5.0,M10.5.0/3";
     static SystemManager_ &getInstance();
@@ -49,12 +50,14 @@ public:
     void tick();
     void show();
     void clear();
+    void scrolling(bool active);
     void renderMessagePage();
     void renderCustomPage();
     void renderImagePage();
     void renderButtonPage();
     void renderClockPage();
     void nextPage();
+    void showPage(String pageName);
     void previousPage();
     void renderWeatherPage();
     void sendCustomPageKeys();

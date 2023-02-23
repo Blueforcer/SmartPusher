@@ -263,7 +263,6 @@ void HAMqtt::processMessage(const char *topic, const uint8_t *payload, uint16_t 
 
     if (!noHA)
     {
-        Serial.println("NONONO");
         for (uint8_t i = 0; i < _devicesTypesNb; i++)
         {
             _devicesTypes[i]->onMqttMessage(topic, payload, length);

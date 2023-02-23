@@ -1,7 +1,7 @@
 // Turns on debug information of the ArduinoHA core.
 // Please note that you need to initialize serial interface manually
 // by calling Serial.begin([baudRate]) before initializing ArduinoHA.
- //#define ARDUINOHA_DEBUG
+ #define ARDUINOHA_DEBUG
 
 // These macros allow to exclude some parts of the library to save more resources.
  #define EX_ARDUINOHA_BINARY_SENSOR

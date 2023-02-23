@@ -348,7 +348,7 @@ private:
      * The method uses properties passed to the "begin" method.
      */
     void connectToServer();
-    bool noHA =false;
+    bool noHA = false;
     /**
      * This method is called each time the connection with MQTT broker is acquired.
      */

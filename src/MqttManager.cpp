@@ -8,6 +8,8 @@ HAMqtt mqtt(espClient, device, 18);
 
 HALight brightness("BRI", HALight::BrightnessFeature);
 
+HASwitch scroll("SCROLL");
+
 HASwitch led1("LED1");
 HASwitch led2("LED2");
 HASwitch led3("LED3");
@@ -45,6 +47,12 @@ void onBrightnessCommand(uint8_t brightness, HALight *sender)
 void onStateCommand(bool state, HALight *sender)
 {
     SystemManager.BrightnessOnOff(state);
+    sender->setState(state);
+}
+
+void onScrollCommand(bool state, HASwitch *sender)
+{
+    SystemManager.scrolling(state);
     sender->setState(state);
 }
 
@@ -100,6 +108,24 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
         SystemManager.ShowMessage(strPayload);
         return;
     }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/page"))
+    {
+        SystemManager.showPage(strPayload);
+        return;
+    }
+    if (strTopic == SystemManager.MQTT_PREFIX + String("/scrolling"))
+    {
+        if (strPayload == "true")
+        {
+            SystemManager.scrolling(true);
+        }
+        else
+        {
+            SystemManager.scrolling(false);
+        }
+        return;
+    }
+
     if (strTopic == SystemManager.MQTT_PREFIX + String("/image"))
     {
         SystemManager.ShowImage(strPayload);
@@ -113,7 +139,6 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
         String screenName = strTopic.substring(secondSlash, strTopic.indexOf("/", secondSlash));
         String variableName = strTopic.substring(strTopic.lastIndexOf("/") + 1);
         SystemManager.setCustomPageVariables(screenName, variableName, strPayload);
-
         return;
     }
 
@@ -143,9 +168,9 @@ void onMqttConnected()
         MqttManager.publish("brightness", "255");
         MqttManager.publish("message", "Hello from Smartpusher");
         MqttManager.publish("image", "image");
-
-       SystemManager.sendCustomPageKeys();
-        
+        MqttManager.publish("scrolling", "true");
+        MqttManager.publish("page", "time");
+        SystemManager.sendCustomPageKeys();
     }
     for (int i = 1; i <= 8; i++)
     {
@@ -155,7 +180,9 @@ void onMqttConnected()
 
     mqtt.subscribe((prefix + String("/brightness")).c_str());
     mqtt.subscribe((prefix + String("/message")).c_str());
+    mqtt.subscribe((prefix + String("/scrolling")).c_str());
     mqtt.subscribe((prefix + String("/image")).c_str());
+     mqtt.subscribe((prefix + String("/page")).c_str());
     mqtt.subscribe((prefix + String("/custompage/#")).c_str());
     Serial.println("MQTT Connected");
 }
@@ -188,7 +215,7 @@ void MqttManager_::setup()
         Serial.println("Starting Homeassistant discorvery");
 
         device.setUniqueId(mac, sizeof(mac));
-        device.setName("SmartPusher");
+        device.setName("Smartpusher");
         device.setSoftwareVersion(SystemManager.VERSION);
         device.setManufacturer("Blueforcer");
         device.setModel("8 Button Array");
@@ -199,6 +226,11 @@ void MqttManager_::setup()
         brightness.onBrightnessCommand(onBrightnessCommand); // optional
         brightness.setCurrentState(true);
         brightness.setCurrentBrightness(255);
+
+        scroll.onCommand(onScrollCommand);
+        scroll.setIcon("mdi:arrow-left-right");
+        scroll.setCurrentState(true);
+        scroll.setName("Scrolling");
 
         led1.onCommand(onSwitchCommand);
         led1.setIcon("mdi:led-on");
