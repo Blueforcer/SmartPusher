@@ -24,11 +24,6 @@ void FSWebServer::addHandler(const Uri &uri, HTTPMethod method, WebServerClass::
     webserver->on(uri, method, fn);
 }
 
-void FSWebServer::addHandler(const Uri &uri, HTTPMethod method, WebServerClass::THandlerFunction fn1, WebServerClass::THandlerFunction fn2)
-{
-    webserver->on(uri, method, fn1, fn2);
-}
-
 void FSWebServer::addHandler(const Uri &uri, WebServerClass::THandlerFunction handler)
 {
     webserver->on(uri, HTTP_ANY, handler);
@@ -259,19 +254,31 @@ void FSWebServer::doWifiConnection()
     bool persistent = true;
     WiFi.mode(WIFI_AP_STA);
 
-    String json = webserver->arg("plain");
-    DynamicJsonDocument data(256);
-    DeserializationError error = deserializeJson(data, json);
-    ssid = data["ssid"].as<String>();
-    pass = data["password"].as<String>();
-    persistent = data["persistent"].as<bool>();
+    if (webserver->hasArg("ssid"))
+    {
+        ssid = webserver->arg("ssid");
+    }
+
+    if (webserver->hasArg("password"))
+    {
+        pass = webserver->arg("password");
+    }
+
+    if (webserver->hasArg("persistent"))
+    {
+        String pers = webserver->arg("persistent");
+        if (pers.equals("false"))
+        {
+            persistent = false;
+        }
+    }
 
     if (WiFi.status() == WL_CONNECTED)
     {
 
         IPAddress ip = WiFi.localIP();
         String resp = "ESP is currently connected to a WiFi network.<br><br>"
-                      "Actual connection will be closed and a new attempt will be done with <b>";
+        "Actual connection will be closed and a new attempt will be done with <b>";
         resp += ssid;
         resp += "</b> WiFi network.";
         webserver->send(200, "text/plain", resp);
@@ -336,9 +343,8 @@ void FSWebServer::doWifiConnection()
                 esp_wifi_set_config(WIFI_IF_STA, &stationConf);
 #endif
             }
-            else
-            {
-#if defined(ESP8266)
+            else {
+                #if defined(ESP8266)
                 struct station_config stationConf;
                 wifi_station_get_config_default(&stationConf);
                 // Clear previuos configuration
@@ -408,10 +414,10 @@ void FSWebServer::handleScanNetworks()
     DebugPrintln(jsonList);
 }
 
+
 #ifdef INCLUDE_SETUP_HTM
 
-void FSWebServer::addDropdownList(const char *label, const char **array, size_t size)
-{
+void FSWebServer::addDropdownList(const char *label, const char** array, size_t size) {
     File file = m_filesystem->open("/config.json", "r");
     int sz = file.size() * 1.33;
     int docSize = max(sz, 2048);
@@ -434,17 +440,16 @@ void FSWebServer::addDropdownList(const char *label, const char **array, size_t 
         DebugPrintln(F("File not found, will be created new configuration file"));
     }
 
-    numOptions++;
+    numOptions++ ;
 
     // If key is present in json, we don't need to create it.
     if (doc.containsKey(label))
         return;
 
     JsonObject obj = doc.createNestedObject(label);
-    obj["selected"] = array[0]; // first element selected as default
+    obj["selected"] = array[0];     // first element selected as default
     JsonArray arr = obj.createNestedArray("values");
-    for (int i = 0; i < size; i++)
-    {
+    for (int i=0; i<size; i++) {
         arr.add(array[i]);
     }
 
@@ -456,26 +461,24 @@ void FSWebServer::addDropdownList(const char *label, const char **array, size_t 
     file.close();
 }
 
-void FSWebServer::removeWhiteSpaces(const char *input, char *tr)
-{
-    char pr = 0x00;
-    char ch;
 
-    int j = 0;
-    for (int i = 0; i < strlen(input); i++)
-    {
-        ch = input[i];
-        if (ch != '\n' && ch != '\r' && ch != '\t')
-        {
-            if (ch == ' ' && pr == ' ')
-            {
-                continue;
-            }
-            tr[j++] = ch;
+void FSWebServer::removeWhiteSpaces(String& str) {
+    const char noChars[] = {'\n', '\r', '\t'};
+    int pos = -1;
+    // Remove non printable characters
+    for (int i=0; i< sizeof(noChars); i++) {
+        pos = str.indexOf(noChars[i]);
+        while (pos > -1) {
+            str.replace(String(noChars[i]), "");
+            pos = str.indexOf(noChars[i]);
         }
-        pr = ch;
     }
-    tr[j] = '\0';
+    // Remove doubles spaces
+    pos = str.indexOf("  ");
+    while (pos > -1) {
+        str.replace("  ", " ");
+        pos = str.indexOf("  ");
+    }
 }
 
 void FSWebServer::handleSetup()

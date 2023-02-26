@@ -1,0 +1,44 @@
+void convert()
+{
+    File file = FILESYSTEM.open("/test.bmp", "r");
+    if (!file)
+    {
+        Serial.println("Failed to open test.png");
+        return;
+    }
+
+    // Skip the BMP header
+    file.seek(10);
+    int pixel_offset = file.read() | (file.read() << 8) | (file.read() << 16) | (file.read() << 24);
+
+    // Skip to the start of the pixels
+    file.seek(pixel_offset);
+
+    // Create a buffer to hold the XBM data
+    uint8_t xbm[128 * 64 / 8];
+
+    // Convert the BMP image to XBM
+    for (int i = 0; i < 128 * 64 / 8; i++)
+    {
+        uint8_t b = 0;
+        for (int j = 0; j < 8; j++)
+        {
+            int pixel = file.read();
+            if (pixel < 128)
+            {
+                b |= 1 << (7 - j);
+            }
+        }
+        xbm[i] = b;
+    }
+    for (int i = 0; i < 128 * 64 / 8; i++)
+    {
+        xbm[i] = ~xbm[i];
+    }
+    // Display the XBM image on the OLED
+    display.clear();
+    display.drawXbm(0, 0, 128, 64, xbm);
+    display.display();
+
+    
+}

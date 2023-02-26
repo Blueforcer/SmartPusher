@@ -15,17 +15,29 @@
 #include <HTTPClient.h>
 #include "OLEDDisplayUi.h"
 #include "MqttManager.h"
+#include "converter.h"
+
+// Image data structure
+typedef struct
+{
+    uint8_t *buffer;   // pointer to image data in RAM
+    size_t bufferSize; // size of image data in bytes
+    char *name;        // name of image file in SPIFFS
+} ImageData;
+
+#define MAX_IMAGES 10         // maximum number of images that can be stored in RAM
+ImageData images[MAX_IMAGES]; // array of stored images
+int numImages = 0;            // number of images stored in the array
 
 SSD1306 display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
 File fsUploadFile;
-// This array keeps function pointers to all frames
-// frames are the single views that slide in
 
+HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.20";
+const char *VERSION = "2.50";
 
 time_t now;
 tm timeInfo;
@@ -33,26 +45,28 @@ tm timeInfo;
 uint8_t InternalScreen = 0;
 boolean connected = false;
 
-StaticJsonDocument<1024> pages;
+StaticJsonDocument<4096> pages;
 
 unsigned long previousMillis = 0;
 const long CLOCK_INTERVAL = 1000;
 const long PICTURE_INTERVAL = 2000;
 const long CHECK_WIFI_TIME = 10000;
-bool readyForWeatherUpdate = false;
+bool readyDataUpdate = false;
 long timeSinceLastWUpdate = 0;
 unsigned long PREVIOUS_WIFI_CHECK = 0;
 unsigned long PREVIOUS_WEATHER_CHECK = 0;
 unsigned long PREVIOUS_WIFI_MILLIS = 0;
 const int UPDATE_INTERVAL_SECS = 20 * 60; // Update every 20 minutes
-const char *Pushtype;
 
-bool _HIDE_DATE;
-bool _HIDE_SECONDS;
-String MY_CITY;
+bool _SHOW_DATE;
+bool _SHOW_SECONDS;
+String _MY_CITY;
+
+const char *Pushtype;
 String MQTTMessage;
-String Image;
+String ImageName;
 uint8_t BtnNr;
+
 boolean TypeShown;
 boolean MessageShown;
 boolean ImageShown;
@@ -62,8 +76,6 @@ String fDate;
 String fTime;
 uint8_t lastBrightness = 100;
 
-void updateData(OLEDDisplay *display);
-bool FIRST_UPDATE;
 const String weekDays[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 #define FILESYSTEM LittleFS
@@ -74,9 +86,6 @@ FSWebServer mws(FILESYSTEM, server);
 const char *dropdownList[LIST_SIZE] = {
     "Off", "On", "Fade", "Extern", "OnPush"};
 
-// Create a buffer for the JSON data
-const size_t capacity = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 100;
-DynamicJsonDocument doc(3072);
 String cur_temp, cur_condition, cur_icon;
 
 // The getter for the instantiated singleton instance
@@ -87,12 +96,14 @@ SystemManager_ &SystemManager_::getInstance()
 }
 
 IPAddress local_IP;
-
 IPAddress gateway;
 IPAddress subnet;
 IPAddress primaryDNS;
 IPAddress secondaryDNS;
 
+int overlaysCount = 1;
+int TotalFrames = 0;
+int CustomFrames = 0;
 // Initialize the global shared instance
 SystemManager_ &SystemManager = SystemManager.getInstance();
 
@@ -110,11 +121,11 @@ void startFilesystem()
             Serial.printf("FS File: %s, size: %lu\n", fileName, (long unsigned)fileSize);
             file = root.openNextFile();
         }
-        Serial.println();
+        DEBUG_PRINTLN();
     }
     else
     {
-        Serial.println("ERROR on mounting filesystem. It will be formmatted!");
+        DEBUG_PRINTLN("ERROR on mounting filesystem. It will be formmatted!");
         FILESYSTEM.format();
         ESP.restart();
     }
@@ -126,7 +137,7 @@ bool SystemManager_::loadOptions()
     if (FILESYSTEM.exists("/config.json"))
     {
         mws.getOptionValue("Use RGB buttons", RGB_BUTTONS);
-        mws.getOptionValue("Use customized pages", CUSTOM_PAGES);
+        mws.getOptionValue("Show customized pages", CUSTOM_PAGES);
         mws.getOptionValue("Pushmode for Button 1", BTN1_PUSH);
         mws.getOptionValue("Pushmode for Button 2", BTN2_PUSH);
         mws.getOptionValue("Pushmode for Button 3", BTN3_PUSH);
@@ -156,8 +167,10 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Subnet", NET_SN);
         mws.getOptionValue("Primary DNS", NET_PDNS);
         mws.getOptionValue("Secondary DNS", NET_SDNS);
-        mws.getOptionValue("Hide date", HIDE_DATE);
-        mws.getOptionValue("Hide seconds", HIDE_SECONDS);
+        mws.getOptionValue("Hide date", SHOW_DATE);
+        mws.getOptionValue("Hide seconds", SHOW_SECONDS);
+        mws.getOptionValue("Show DateTime page", SHOW_DATETIME);
+        mws.getOptionValue("Show Weather page", SHOW_WEATHER);
 
         if (!local_IP.fromString(NET_IP) || !gateway.fromString(NET_GW) || !subnet.fromString(NET_SN) || !primaryDNS.fromString(NET_PDNS) || !secondaryDNS.fromString(NET_SDNS))
             NET_STATIC = false;
@@ -165,7 +178,7 @@ bool SystemManager_::loadOptions()
         return true;
     }
     else
-        Serial.println(F("File \"config.json\" not exist"));
+        DEBUG_PRINTLN(F("File \"config.json\" not exist"));
     return false;
 }
 
@@ -173,7 +186,7 @@ void SystemManager_::saveOptions()
 {
     mws.saveOptionValue("Homeassistant discovery", HA_DISCOVERY);
     mws.saveOptionValue("Use RGB buttons", RGB_BUTTONS);
-    mws.saveOptionValue("Use customized pages", CUSTOM_PAGES);
+    mws.saveOptionValue("Show customized pages", CUSTOM_PAGES);
     mws.saveOptionValue("Pushmode for Button 1", BTN1_PUSH);
     mws.saveOptionValue("Pushmode for Button 2", BTN2_PUSH);
     mws.saveOptionValue("Pushmode for Button 3", BTN3_PUSH);
@@ -202,13 +215,16 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Subnet", NET_SN);
     mws.saveOptionValue("Primary DNS", NET_PDNS);
     mws.saveOptionValue("Secondary DNS", NET_SDNS);
-    mws.saveOptionValue("Hide date", HIDE_DATE);
-    mws.saveOptionValue("Hide seconds", HIDE_SECONDS);
-    Serial.println(F("Application options saved."));
+    mws.saveOptionValue("Hide date", SHOW_DATE);
+    mws.saveOptionValue("Hide seconds", SHOW_SECONDS);
+    mws.saveOptionValue("Show DateTime page", SHOW_DATETIME);
+    mws.saveOptionValue("Show Weather page", SHOW_WEATHER);
+
+    DEBUG_PRINTLN(F("Application options saved."));
 }
 
 // function to get the name of the current screen
-String getPageNameName(int index)
+String getPageByIndex(int index)
 {
 
     int i = 0;
@@ -268,7 +284,9 @@ void SystemManager_::sendCustomPageKeys()
             for (JsonPair item : obj.as<JsonObject>())
             {
                 String key = item.key().c_str();
-                if (key != "x" && key != "y" && key != "s")
+                if (key == "t" && item.value().as<String>() == "text")
+                    continue;
+                if (key != "x" && key != "y" && key != "s" && key != "t")
                 {
                     String topic = "custompage/" + String(page.key().c_str()) + "/" + key;
                     String value = item.value().as<String>();
@@ -279,211 +297,257 @@ void SystemManager_::sendCustomPageKeys()
     }
 }
 
+void addImageToRAM(const String &name)
+{
+    DEBUG_PRINTLN(name);
+    for (int i = 0; i < numImages; i++)
+    {
+        if (strcmp(images[i].name, name.c_str()) == 0)
+        {
+            // Image already in RAM, do nothing
+            return;
+        }
+    }
+
+    // Load image from SPIFFS into RAM
+    // Load image from SPIFFS into RAM
+    File myFile = FILESYSTEM.open("/" + name + ".bin", "r");
+    if (myFile)
+    {
+        uint8_t w = myFile.read();
+        uint8_t h = myFile.read();
+        size_t dataIndex = 2;
+        size_t xbmDataIndex = 0;
+        uint8_t xbmData[(w / 8) * h];
+        for (size_t y = 0; y < h; y++)
+        {
+            for (size_t i = 0; i < (w / 8); i++)
+            {
+                uint8_t b = myFile.read();
+                xbmData[xbmDataIndex++] = b;
+                dataIndex++;
+            }
+        }
+        myFile.close();
+        // Add image data to array
+        images[numImages].buffer = (uint8_t *)malloc(xbmDataIndex + 2);
+        if (!images[numImages].buffer)
+        {
+            DEBUG_PRINTLN("Out of memory error");
+            return;
+        }
+        images[numImages].buffer[0] = w;
+        images[numImages].buffer[1] = h;
+        memcpy(&images[numImages].buffer[2], xbmData, xbmDataIndex);
+        images[numImages].bufferSize = xbmDataIndex + 2;
+        images[numImages].name = strdup(name.c_str());
+        numImages++;
+    }
+}
+
+void renderImage(uint8_t x, uint8_t y, const String &name)
+{
+    // Find image in array
+    int imageIndex = -1;
+    for (int i = 0; i < numImages; i++)
+    {
+        if (strcmp(images[i].name, name.c_str()) == 0)
+        {
+            imageIndex = i;
+            break;
+        }
+    }
+    if (imageIndex < 0)
+    {
+        DEBUG_PRINTLN("Image not found in RAM, load from SPIFFS");
+        addImageToRAM(name);
+        imageIndex = numImages - 1;
+    }
+    // Display image from RAM buffer
+    uint8_t w = images[imageIndex].buffer[0];
+    uint8_t h = images[imageIndex].buffer[1];
+    uint8_t *xbmData = &images[imageIndex].buffer[2];
+    size_t xbmDataSize = images[imageIndex].bufferSize - 2;
+    display.drawXbm(x, y, w, h, xbmData);
+}
+
+void SystemManager_::renderImagePage()
+{
+    display.clear();
+    renderImage(0, 0, ImageName);
+    display.display();
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= TIME_PER_FRAME)
+    {
+        previousMillis = currentMillis;
+        InternalScreen = 0;
+        ImageShown = false;
+    }
+}
+
 // What's displayed along the top line
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
 {
-    display->setColor(WHITE);
-    display->setFont(ArialMT_Plain_10);
-    display->setTextAlignment(TEXT_ALIGN_LEFT);
-    char buff[16];
-    sprintf_P(buff, PSTR("%02d:%02d"), timeInfo.tm_hour, timeInfo.tm_min);
-    display->drawString(0, 54, String(buff));
-    display->setTextAlignment(TEXT_ALIGN_RIGHT);
-    display->drawString(128, 54, cur_temp + "°C");
-    display->drawHorizontalLine(0, 52, 128);
+    if (TotalFrames < 7)
+    {
+        display->setColor(WHITE);
+        display->setFont(ArialMT_Plain_10);
+        display->setTextAlignment(TEXT_ALIGN_LEFT);
+        char buff[16];
+        sprintf_P(buff, PSTR("%02d:%02d"), timeInfo.tm_hour, timeInfo.tm_min);
+        display->drawString(0, 54, String(buff));
+
+        if (cur_temp != "")
+        {
+            display->setTextAlignment(TEXT_ALIGN_RIGHT);
+            display->drawString(128, 54, cur_temp + "°C");
+            display->drawHorizontalLine(0, 52, 128);
+        }
+    }
+}
+
+void SystemManager_::setCustomPageVariables(String PageName, String variableName, String Value)
+{
+    if (CustomFrames == 0)
+        return;
+    if (pages.containsKey(PageName))
+    {
+        pages.garbageCollect();
+        JsonArray page = pages[PageName].as<JsonArray>();
+        for (JsonObject obj : page)
+        {
+            if (obj.containsKey(variableName))
+            {
+                DEBUG_PRINTLN("Set " + Value + " for " + variableName + " in " + PageName);
+                obj[variableName] = Value;
+                return;
+            }
+        }
+    }
+    else
+    {
+        DEBUG_PRINTLN("Page " + PageName + " not found!");
+    }
+}
+
+void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    String pageName = getPageByIndex(pageIndex);
+    if (pageName != "")
+    {
+        JsonArray page = pages[pageName].as<JsonArray>();
+        for (JsonObject obj : page)
+        {
+            int x1 = obj["x"];
+            int y1 = obj["y"];
+            display->setTextAlignment(TEXT_ALIGN_LEFT);
+            String type = obj["t"].as<String>();
+            if (type == "text")
+            {
+                if (obj.containsKey("s"))
+                {
+                    int s = obj["s"];
+                    switch (s)
+                    {
+                    case 10:
+                        display->setFont(ArialMT_Plain_10);
+                        break;
+                    case 16:
+                        display->setFont(ArialMT_Plain_16);
+                        break;
+                    case 24:
+                        display->setFont(ArialMT_Plain_24);
+                        break;
+                    case 30:
+                        display->setFont(Roboto_Black_30);
+                        break;
+                    case 36:
+                        display->setFont(Roboto_Black_36);
+                        break;
+                    default:
+                        display->setFont(ArialMT_Plain_10);
+                        break;
+                    }
+                }
+                JsonObject::iterator it = obj.begin();
+                while (it != obj.end())
+                {
+                    String key = it->key().c_str();
+                    String vt = it->value().as<String>();
+                    if (key == "x" || key == "y" || key == "s" || key == "t")
+                    {
+                        ++it;     // Gehe zum nächsten Eintrag
+                        continue; // Überspringe die Verarbeitung dieses Eintrags
+                    }
+
+                    if (!it->value().is<String>())
+                    {
+                        DEBUG_PRINTLN("Ungültiger Wert für Schlüssel in " + pageName + ": " + key + "-" + vt);
+                        serializeJson(obj, Serial);
+                        break; // Beende die Schleife, um die komplette JSON-Ausgabe nur einmal anzuzeigen
+                    }
+                    display->drawString(x1 + x, y1 + y, vt);
+                    ++it;
+                }
+            }
+            else if (type == "image")
+            {
+                String image = obj["i"].as<String>();
+                renderImage(x1 + x, y1 + y, image);
+            }
+            else if (type == "bar")
+            {
+                int w = obj["w"];
+                int h = obj["h"];
+                int v = obj["v"];
+                display->drawProgressBar(x1 + x, y1 + y, w, h, v);
+            }
+            else
+            {
+                // Handle andere Strings
+            }
+        }
+    }
 }
 
 void customFrame1(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
-    String pageName = getPageNameName(0);
-    if (pageName != "")
-    {
-        JsonArray page = pages[pageName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            int x1 = obj["x"];
-            int y1 = obj["y"];
-            int s = obj["s"];
-            switch (s)
-            {
-            case 10:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            case 16:
-                display->setFont(ArialMT_Plain_16);
-                break;
-            case 24:
-                display->setFont(ArialMT_Plain_24);
-                break;
-            case 30:
-                display->setFont(Roboto_Black_30);
-                break;
-            case 36:
-                display->setFont(Roboto_Black_36);
-                break;
-            default:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            }
-            JsonObject::iterator it = obj.begin();
-            while (it != obj.end())
-            {
-                String key = it->key().c_str();
-                if (key != "x" && key != "y" && key != "s")
-                {
-                    String vt = it->value().as<String>();
-                    display->setTextAlignment(TEXT_ALIGN_LEFT);
-                    display->drawString(x1 + x, y1 + y, vt);
-                }
-                ++it;
-            }
-        }
-    }
+    drawCustomFrame(0, display, state, x, y);
 }
 
 void customFrame2(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
-
-    String pageName = getPageNameName(1);
-    if (pageName != "")
-    {
-        JsonArray page = pages[pageName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            int x1 = obj["x"];
-            int y1 = obj["y"];
-            int s = obj["s"];
-            switch (s)
-            {
-            case 10:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            case 16:
-                display->setFont(ArialMT_Plain_16);
-                break;
-            case 24:
-                display->setFont(ArialMT_Plain_24);
-                break;
-            case 30:
-                display->setFont(Roboto_Black_30);
-                break;
-            case 36:
-                display->setFont(Roboto_Black_36);
-                break;
-            default:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            }
-            JsonObject::iterator it = obj.begin();
-            while (it != obj.end())
-            {
-                String key = it->key().c_str();
-                if (key != "x" && key != "y" && key != "s")
-                {
-                    String vt = it->value().as<String>();
-                    display->setTextAlignment(TEXT_ALIGN_LEFT);
-                    display->drawString(x1 + x, y1 + y, vt);
-                }
-                ++it;
-            }
-        }
-    }
+    drawCustomFrame(1, display, state, x, y);
 }
 
 void customFrame3(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
-    String pageName = getPageNameName(2);
-    if (pageName != "")
-    {
-        JsonArray page = pages[pageName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            int x1 = obj["x"];
-            int y1 = obj["y"];
-            int s = obj["s"];
-            switch (s)
-            {
-            case 10:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            case 16:
-                display->setFont(ArialMT_Plain_16);
-                break;
-            case 24:
-                display->setFont(ArialMT_Plain_24);
-                break;
-            case 30:
-                display->setFont(Roboto_Black_30);
-                break;
-            case 36:
-                display->setFont(Roboto_Black_36);
-                break;
-            default:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            }
-            JsonObject::iterator it = obj.begin();
-            while (it != obj.end())
-            {
-                String key = it->key().c_str();
-                if (key != "x" && key != "y" && key != "s")
-                {
-                    String vt = it->value().as<String>();
-                    display->setTextAlignment(TEXT_ALIGN_LEFT);
-                    display->drawString(x1 + x, y1 + y, vt);
-                }
-                ++it;
-            }
-        }
-    }
+    drawCustomFrame(2, display, state, x, y);
 }
 
 void customFrame4(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
-    String pageName = getPageNameName(3);
-    if (pageName != "")
-    {
-        JsonArray page = pages[pageName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            int x1 = obj["x"];
-            int y1 = obj["y"];
-            int s = obj["s"];
-            switch (s)
-            {
-            case 10:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            case 16:
-                display->setFont(ArialMT_Plain_16);
-                break;
-            case 24:
-                display->setFont(ArialMT_Plain_24);
-                break;
-            case 30:
-                display->setFont(Roboto_Black_30);
-                break;
-            case 36:
-                display->setFont(Roboto_Black_36);
-                break;
-            default:
-                display->setFont(ArialMT_Plain_10);
-                break;
-            }
-            JsonObject::iterator it = obj.begin();
-            while (it != obj.end())
-            {
-                String key = it->key().c_str();
-                if (key != "x" && key != "y" && key != "s")
-                {
-                    String vt = it->value().as<String>();
-                    display->setTextAlignment(TEXT_ALIGN_LEFT);
-                    display->drawString(x1 + x, y1 + y, vt);
-                }
-                ++it;
-            }
-        }
-    }
+    drawCustomFrame(3, display, state, x, y);
+}
+
+void customFrame5(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    drawCustomFrame(4, display, state, x, y);
+}
+
+void customFrame6(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    drawCustomFrame(5, display, state, x, y);
+}
+
+void customFrame7(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    drawCustomFrame(6, display, state, x, y);
+}
+
+void customFrame8(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    drawCustomFrame(7, display, state, x, y);
 }
 
 String getMeteoconIcon(String icon)
@@ -596,8 +660,6 @@ String getMeteoconIcon(String icon)
     {
         return "M";
     }
-    // Nothing matched: N/A
-    Serial.println(icon);
     return ")";
 }
 
@@ -623,32 +685,20 @@ void weatherFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, in
     display->drawString(64 + x + x_con, 38 + y, cur_condition);
     display->setFont(ArialMT_Plain_24);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
-    String temp = cur_temp + "C°";
-    display->drawString(60 + x, 5 + y, temp);
+    display->drawString(60 + x, 5 + y, cur_temp + "C°");
 
     display->setFont(Meteocons_Plain_36);
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(32 + x, 0 + y, getMeteoconIcon(cur_icon));
 }
 
-void drawProgress(OLEDDisplay *display, int percentage, String label, String adInfo)
-{
-    display->clear();
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->setFont(ArialMT_Plain_10);
-    display->drawString(64, 10, label);
-    display->drawProgressBar(2, 28, 124, 10, percentage);
-    display->drawString(64, 50, adInfo);
-    display->display();
-}
-
 void drawProgress(OLEDDisplay *display, int percentage, String label)
 {
     display->clear();
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->setFont(ArialMT_Plain_10);
-    display->drawString(64, 10, label);
-    display->drawProgressBar(2, 28, 124, 10, percentage);
+    display->setFont(ArialMT_Plain_16);
+    display->drawStringMaxWidth(64, 4, 128, label);
+    display->drawProgressBar(2, 45, 124, 10, percentage);
     display->display();
 }
 
@@ -659,7 +709,7 @@ void DateTimeFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, i
     timeInfo = localtime(&now);
     char buff[16];
 
-    if (!_HIDE_DATE)
+    if (_SHOW_DATE)
     {
         display->setTextAlignment(TEXT_ALIGN_CENTER);
         display->setFont(ArialMT_Plain_16);
@@ -669,13 +719,13 @@ void DateTimeFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, i
         display->drawString(64 + x, 2 + y, String(buff));
         display->setFont(ArialMT_Plain_24);
 
-        if (_HIDE_SECONDS)
+        if (_SHOW_SECONDS)
         {
-            sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
+            sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
         }
         else
         {
-            sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+            sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
         }
 
         display->drawString(64 + x, 19 + y, String(buff));
@@ -684,23 +734,18 @@ void DateTimeFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, i
     {
         display->setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
         display->setFont(Roboto_Black_30);
-        if (_HIDE_SECONDS)
+        if (_SHOW_SECONDS)
         {
-            sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
+            sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
         }
         else
         {
-            sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+            sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
         }
         display->drawString(64 + x, 28 + y, String(buff));
         display->setTextAlignment(TEXT_ALIGN_LEFT);
     }
 }
-
-FrameCallback frames[] = {DateTimeFrame, weatherFrame, customFrame1, customFrame2, customFrame3, customFrame4};
-OverlayCallback overlays[] = {msOverlay};
-int overlaysCount = 1;
-int frameCount = 2;
 
 void SettingsSaved(String result)
 {
@@ -710,12 +755,12 @@ void SettingsSaved(String result)
 
 void update_started()
 {
-    Serial.println("CALLBACK:  HTTP update process started");
+    DEBUG_PRINTLN("CALLBACK:  HTTP update process started");
 }
 
 void update_finished()
 {
-    Serial.println("CALLBACK:  HTTP update process finished");
+    DEBUG_PRINTLN("CALLBACK:  HTTP update process finished");
 }
 
 void update_progress(int cur, int total)
@@ -724,7 +769,7 @@ void update_progress(int cur, int total)
     Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
 
     int percent = (100 * cur) / total;
-    Serial.println(percent);
+    DEBUG_PRINTLN(percent);
 
     display.display();
     if (percent != last_percent)
@@ -741,14 +786,8 @@ void update_progress(int cur, int total)
     }
 }
 
-////////////////////////////  HTTP Request Handlers  ////////////////////////////////////
-void handleLoadOptions()
-{
-    WebServerClass *webRequest = mws.getRequest();
-    // loadOptions();
-    Serial.println(F("Application option loaded after web request"));
-    webRequest->send(200, "text/plain", "Options loaded");
-}
+std::vector<FrameCallback> frames;
+OverlayCallback overlays[] = {msOverlay};
 
 // function to load screens from JSON file
 bool loadCustomScreens()
@@ -758,106 +797,77 @@ bool loadCustomScreens()
         File file = FILESYSTEM.open("/pages.json", "r");
         if (!file)
         {
-            Serial.println("Failed to open pages.json file");
+            DEBUG_PRINTLN("Failed to open pages.json file");
             return false;
         }
         DeserializationError error = deserializeJson(pages, file);
         if (error)
         {
-            Serial.println("Failed to parse pages.json file");
+            DEBUG_PRINTLN("Failed to parse pages.json file");
             return false;
         }
 
-        frameCount = frameCount + pages.size();
+        CustomFrames = pages.size();
+        DEBUG_PRINTLN("Found " + String(CustomFrames) + " custom pages");
+        void (*customFrames[8])(OLEDDisplay *, OLEDDisplayUiState *, int16_t, int16_t) = {customFrame1, customFrame2, customFrame3, customFrame4, customFrame5, customFrame6, customFrame7, customFrame8};
+        for (int i = 0; i < CustomFrames && i < 8; i++)
+        {
+            if (customFrames[i] != NULL)
+            {
+                frames.push_back(customFrames[i]);
+            }
+        }
     }
     return true;
 }
 
-static const char save_btn_htm[] PROGMEM = R"EOF(
-<form action="/converter" method="POST" enctype="multipart/form-data">
-        <label for="file">Wähle eine Datei aus:</label>
-        <input type="file" name="file" id="file">
-        <br>
-        <input type="submit" value="Hochladen">
-    </form>
-)EOF";
-
-void handleConverterUpload()
-{
-    String filename;
-    Serial.println("File incoming..");
-    WebServerClass *webRequest = mws.getRequest();
-    HTTPUpload &upload = webRequest->upload();
-    if (upload.status == UPLOAD_FILE_START)
-    {
-        filename = upload.filename;
-        Serial.println(filename);
-        if (!filename.startsWith("/"))
-            filename = "/" + filename;
-        Serial.print("handleFileUpload Name: ");
-        Serial.println(filename);
-        fsUploadFile = FILESYSTEM.open(filename, "w"); // Open the file for writing in SPIFFS (create if it doesn't exist)
-        filename = String();
-    }
-    else if (upload.status == UPLOAD_FILE_WRITE)
-    {
-        if (fsUploadFile)
-            fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
-    }
-    else if (upload.status == UPLOAD_FILE_END)
-    {
-        if (fsUploadFile)
-        { // If the file was successfully created
-            fsUploadFile.close();
-        }
-    }
-}
-
 void SystemManager_::setup()
 {
-
     delay(2000);
     startFilesystem();
-
     ui.setTargetFPS(40);
-    ui.setIndicatorPosition(BOTTOM);      // You can change this to TOP, LEFT, BOTTOM, RIGHT
-    ui.setIndicatorDirection(LEFT_RIGHT); // Defines where the first frame is located in the bar
-    ui.setFrameAnimation(SLIDE_LEFT);     // You can change the transition that is used SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
-
+    ui.setIndicatorPosition(BOTTOM);         // You can change this to TOP, LEFT, BOTTOM, RIGHT
+    ui.setIndicatorDirection(LEFT_RIGHT);    // Defines where the first frame is located in the bar
+    ui.setFrameAnimation(SLIDE_LEFT);        // You can change the transition that is used SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
     ui.setOverlays(overlays, overlaysCount); // Add overlays
     ui.init();                               // Initialising the UI will init the display too.
     display.flipScreenVertically();
     display.clear();
     display.drawXbm(0, 0, 128, 64, logo);
     display.display();
-    delay(1500);
+    delay(1000);
     display.clear();
     display.setFont(ArialMT_Plain_24);
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     display.drawString(64, 20, "v" + String(VERSION));
     display.display();
-    delay(800);
-
+    delay(500);
+    drawProgress(&display, 5, "Loading Settings");
     if (loadOptions())
-        Serial.println(F("Application option loaded"));
-    else
-        Serial.println(F("Application options NOT loaded!"));
-    MY_CITY = CITY;
-    _HIDE_DATE = HIDE_DATE;
-    _HIDE_SECONDS = HIDE_SECONDS;
+        DEBUG_PRINTLN("Application option loaded");
+    _MY_CITY = CITY;
+    _SHOW_DATE = SHOW_DATE;
+    _SHOW_SECONDS = SHOW_SECONDS;
     ui.setTimePerFrame(TIME_PER_FRAME);
     ui.setTimePerTransition(TIME_PER_TRANSITION);
     if (PAGE_BUTTONS)
         ui.disableAutoTransition();
-    display.clear();
 
-    drawProgress(&display, 0, "Connecting to WiFi");
+    drawProgress(&display, 10, "Connecting to WiFi");
     if (NET_STATIC)
     {
         WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
     }
 
-    IPAddress myIP = mws.startWiFi(15000, "SmartPusher", "12345678");
+    IPAddress myIP = mws.startWiFi(10000, "SmartPusher", "12345678");
+    connected = !(myIP == IPAddress(192, 168, 4, 1));
+    if (connected)
+    {
+        drawProgress(&display, 10, WiFi.localIP().toString());
+        delay(2000);
+    }
+
+    drawProgress(&display, 20, "Loading Webinterface");
     mws.addOptionBox("Network");
     mws.addOption("Static IP", NET_STATIC);
     mws.addOption("Local IP", NET_IP);
@@ -884,8 +894,8 @@ void SystemManager_::setup()
     mws.addOption("Pushmode for Button 7", BTN7_PUSH);
     mws.addOption("Pushmode for Button 8", BTN8_PUSH);
     mws.addOptionBox("Time");
-    mws.addOption("Hide date", HIDE_DATE);
-    mws.addOption("Hide seconds", HIDE_SECONDS);
+    mws.addOption("Show date", SHOW_DATE);
+    mws.addOption("Show seconds", SHOW_SECONDS);
     mws.addOption("NTP Server", NTP_SERVER);
     mws.addOption("Timezone", NTP_TZ);
     mws.addHTML("<p>Find your timezone at <a href='https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv' target='_blank' rel='noopener noreferrer'>posix_tz_db</a>.</p>", "tz_link");
@@ -895,22 +905,29 @@ void SystemManager_::setup()
     mws.addHTML("<h3>Weather</h3>", "weather_settings");
     mws.addOption("City", CITY);
     mws.addHTML("<h3>Page Settings</h3>", "page_settings");
+    mws.addOption("Show DateTime page", SHOW_DATETIME);
+    mws.addOption("Show Weather page", SHOW_WEATHER);
+    mws.addOption("Show customized pages", CUSTOM_PAGES);
     mws.addOption("Control with Button 7&8", PAGE_BUTTONS);
-    mws.addOption("Use customized pages", CUSTOM_PAGES);
     mws.addOption("Duration per Page", TIME_PER_FRAME);
     mws.addOption("Transistion duration", TIME_PER_TRANSITION);
-    mws.addHandler(
-        "/converter", HTTP_POST, []()
-        { mws.getRequest()->send(200); },
-        handleConverterUpload);
+    mws.addOptionBox("Images");
+    mws.addHTML(custom_html, "custom-html");
+    mws.addJavascript(custom_script);
+    mws.addCSS(custom_css);
     mws.getRequest()->setContentLength(10240);
-
     mws.begin();
-    connected = !(myIP == IPAddress(192, 168, 4, 1));
+
+    if (SHOW_DATETIME)
+        frames.push_back(DateTimeFrame);
+    if (SHOW_WEATHER)
+        frames.push_back(weatherFrame);
     if (CUSTOM_PAGES)
         loadCustomScreens();
-
-    ui.setFrames(frames, frameCount); // Add frames
+    TotalFrames = frames.size();
+    ui.setFrames(frames.data(), TotalFrames); // Add frames
+    if (TotalFrames == 1)
+        ui.disableAutoTransition();
     if (!connected)
     {
         display.setFont(ArialMT_Plain_16);
@@ -923,70 +940,64 @@ void SystemManager_::setup()
     }
     else
     {
-        display.setFont(ArialMT_Plain_16);
-        Serial.print("IP-Adresse = ");
-        Serial.println(WiFi.localIP());
-        display.clear();
-        display.setTextAlignment(TEXT_ALIGN_CENTER);
-        display.drawString(64, 10, "CONNECTED!");
-        display.drawString(64, 40, WiFi.localIP().toString());
-        display.display();
-        delay(2000);
-
         connected = true;
         Update.onProgress(update_progress);
         configTzTime(NTP_TZ.c_str(), NTP_SERVER.c_str());
         MqttManager.setup();
-        drawProgress(&display, 10, "Connecting to MQTT");
+        drawProgress(&display, 30, "Connecting to MQTT");
         MqttManager.tick();
-        updateData(&display);
+        UpdateData();
     }
+
     setBrightness(255);
 }
 
-void updateData(OLEDDisplay *display)
+void SystemManager_::UpdateData()
 {
-    drawProgress(display, 30, "Updating time");
+    DEBUG_PRINTLN("Updating Data");
+    drawProgress(&display, 40, "Updating time");
     getLocalTime(&timeInfo);
-    drawProgress(display, 50, "Updating weather");
-    HTTPClient http;
-    String url = "https://wttr.in/" + MY_CITY + "?format=j2";
-    http.begin(url);
-    int httpCode = http.GET();
-    if (httpCode == HTTP_CODE_OK)
+
+    if (SHOW_WEATHER)
     {
-        String response = http.getString();
-        DeserializationError error = deserializeJson(doc, response);
-        if (error)
+        drawProgress(&display, 60, "Updating weather");
+        String url = "https://wttr.in/" + _MY_CITY + "?format=j2";
+        http.begin(url);
+        int httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK)
         {
-            Serial.println("Error deserializing JSON data: " + String(error.c_str()));
-            return;
+            String response = http.getString();
+            DynamicJsonDocument doc(3072);
+            DeserializationError error = deserializeJson(doc, response);
+            if (error)
+            {
+                DEBUG_PRINTLN("Error deserializing JSON data: " + String(error.c_str()));
+                return;
+            }
+            cur_temp = doc["current_condition"][0]["temp_C"].as<String>();
+            cur_condition = doc["current_condition"][0]["weatherDesc"][0]["value"].as<String>();
         }
-        cur_temp = doc["current_condition"][0]["temp_C"].as<String>();
-        cur_condition = doc["current_condition"][0]["weatherDesc"][0]["value"].as<String>();
+        else
+        {
+            DEBUG_PRINTLN(httpCode);
+        }
+
+        http.end();
+        drawProgress(&display, 70, "Updating weathericon");
+        url = "https://wttr.in/" + _MY_CITY + "?format=%x";
+        http.begin(url);
+        httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK)
+        {
+            cur_icon = http.getString();
+        }
+
+        http.end();
+        drawProgress(&display, 80, "Updating forecasts");
     }
-    else
-    {
-        Serial.println(httpCode);
-    }
+    readyDataUpdate = false;
 
-    http.end();
-
-    drawProgress(display, 70, "Updating weathericon");
-    url = "https://wttr.in/" + MY_CITY + "?format=%x";
-    http.begin(url);
-    httpCode = http.GET();
-    if (httpCode == HTTP_CODE_OK)
-    {
-        cur_icon = http.getString();
-    }
-
-    http.end();
-    FIRST_UPDATE = true;
-    drawProgress(display, 50, "Updating forecasts");
-
-    readyForWeatherUpdate = false;
-    drawProgress(display, 100, "Done!");
+    drawProgress(&display, 100, "Done!");
     delay(1000);
 }
 
@@ -995,7 +1006,6 @@ void SystemManager_::tick()
     mws.run();
     if (!connected)
     {
-
         return;
     }
 
@@ -1020,13 +1030,13 @@ void SystemManager_::tick()
     {
         if (millis() - timeSinceLastWUpdate > (1000L * UPDATE_INTERVAL_SECS))
         {
-            readyForWeatherUpdate = true;
+            readyDataUpdate = true;
             timeSinceLastWUpdate = millis();
         }
 
-        if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
+        if (readyDataUpdate && ui.getUiState()->frameState == FIXED)
         {
-            updateData(&display);
+            UpdateData();
         }
 
         int remainingTimeBudget = ui.update();
@@ -1053,7 +1063,6 @@ void SystemManager_::clear()
 
 void SystemManager_::setBrightness(uint8_t val)
 {
-
     display.setContrast(val);
     if (val == 0)
     {
@@ -1090,7 +1099,7 @@ void SystemManager_::ShowMessage(String msg)
 
 void SystemManager_::ShowImage(String img)
 {
-    Image = img;
+    ImageName = img;
     previousMillis = millis();
     InternalScreen = 2;
 }
@@ -1111,7 +1120,6 @@ void SystemManager_::renderMessagePage()
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     uint16_t firstline = display.drawStringMaxWidth(64, 0, 128, MQTTMessage.substring(start_at));
     display.display();
-
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= CLOCK_INTERVAL)
     {
@@ -1151,70 +1159,6 @@ void SystemManager_::renderButtonPage()
         previousMillis = currentMillis;
         InternalScreen = 0;
         TypeShown = false;
-    }
-}
-
-void SystemManager_::renderImagePage()
-{
-    if (FILESYSTEM.exists("/" + Image + ".bin"))
-    {
-
-        File myFile = FILESYSTEM.open("/" + Image + ".bin", "r");
-        if (myFile)
-        {
-            display.clear();
-            uint8_t w = myFile.read();
-            uint8_t h = myFile.read();
-            for (size_t y = 0; y < h; y++)
-            {
-                uint8_t xpos = 0;
-                for (size_t i = 0; i < (w / 8); i++)
-                {
-                    uint8_t b = myFile.read();
-                    for (uint8_t bt = 0; bt < 8; bt++)
-                    {
-                        display.setPixelColor(xpos++, y, (bitRead(b, bt) ? WHITE : BLACK));
-                    }
-                }
-            }
-            myFile.close();
-            display.display();
-        }
-    }
-    else
-    {
-        display.setFont(ArialMT_Plain_16);
-        display.drawString(14, 25, "NOT FOUND!");
-        display.display();
-    }
-
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= TIME_PER_FRAME)
-    {
-        previousMillis = currentMillis;
-        InternalScreen = 0;
-        ImageShown = false;
-    }
-    SPIFFS.end();
-}
-
-void SystemManager_::setCustomPageVariables(String PageName, String variableName, String Value)
-{
-    if (pages.containsKey(PageName))
-    {
-        JsonArray page = pages[PageName].as<JsonArray>();
-        for (JsonObject obj : page)
-        {
-            if (obj.containsKey(variableName))
-            {
-                obj[variableName] = Value;
-                return;
-            }
-        }
-    }
-    else
-    {
-        Serial.println("Page " + PageName + " not found!");
     }
 }
 

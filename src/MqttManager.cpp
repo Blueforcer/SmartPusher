@@ -166,7 +166,7 @@ void onMqttConnected()
         }
 
         MqttManager.publish("brightness", "255");
-        MqttManager.publish("message", "Hello from Smartpusher");
+        MqttManager.publish("message", "Hello from SmartPusher");
         MqttManager.publish("image", "image");
         MqttManager.publish("scrolling", "true");
         MqttManager.publish("page", "time");
@@ -215,7 +215,7 @@ void MqttManager_::setup()
         Serial.println("Starting Homeassistant discorvery");
 
         device.setUniqueId(mac, sizeof(mac));
-        device.setName("Smartpusher");
+        device.setName("SmartPusher");
         device.setSoftwareVersion(SystemManager.VERSION);
         device.setManufacturer("Blueforcer");
         device.setModel("8 Button Array");

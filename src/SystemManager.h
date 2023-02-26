@@ -1,20 +1,34 @@
 #ifndef SystemManager_h
 #define SystemManager_h
 
+//#define _DEBUG_
+#if defined(_DEBUG_)
+    #include <Arduino.h>
+    #define DEBUG_PRINTLN(x) Serial.println(x);
+    #define DEBUG_PRINT(x) Serial.print(x);
+#else
+    #define DEBUG_PRINTLN(x)
+    #define DEBUG_PRINT(x)
+#endif
+
 #include <ButtonManager.h>
 
 class SystemManager_
 {
 private:
     SystemManager_() = default;
-
+    IPAddress local_IP;
+    IPAddress gateway;
+    IPAddress subnet;
+    IPAddress primaryDNS;
+    IPAddress secondaryDNS;
 public:
-    const char *VERSION = "2.20";
+    const char *VERSION = "2.50";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
     String MQTT_PASS;
-    String MQTT_PREFIX = "Smartpusher";
+    String MQTT_PREFIX = "SmartPusher";
     String CITY = "Berlin,de";
     bool IS_METRIC = true;
     bool BTN1_PUSH = false;
@@ -32,8 +46,10 @@ public:
     bool PAGE_BUTTONS = false;
     bool IO_BROKER = false;
     bool NET_STATIC = false;
-    bool HIDE_DATE=false;
-    bool HIDE_SECONDS=false;
+    bool SHOW_DATE = true;
+    bool SHOW_WEATHER = true;
+    bool SHOW_DATETIME = true;
+    bool SHOW_SECONDS = true;
     String NET_IP = "192.168.178.10";
     String NET_GW = "192.168.178.1";
     String NET_SN = "255.255.255.0";
@@ -57,6 +73,7 @@ public:
     void renderButtonPage();
     void renderClockPage();
     void nextPage();
+    void UpdateData();
     void showPage(String pageName);
     void previousPage();
     void renderWeatherPage();
