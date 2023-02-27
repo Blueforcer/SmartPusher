@@ -308,65 +308,66 @@ static const char custom_css[] PROGMEM = R"EOF(
 static const char custom_script[] PROGMEM = R"EOF(
 	var __output;
 
-		// Output the image as a string for horizontally drawing displays
-		function horizontal1bit(data, canvasWidth, canvasHeight, filname) {
-			var output = new Uint8Array(Math.ceil(canvasWidth * canvasHeight / 8) + 2);
-			var output_index = 0;
+function horizontal1bit(data, canvasWidth, canvasHeight, filename) {
+    var output = new Uint8Array(Math.ceil(canvasWidth * canvasHeight / 8) + 2);
+    var output_index = 0;
 
-			// Write the width and height to the output buffer
-			output[0] = canvasWidth;
-			output[1] = canvasHeight;
+    // Write the width and height to the output buffer
+    output[0] = canvasWidth;
+    output[1] = canvasHeight;
 
-			var byteIndex = 0;
-			var number = 0;
+    var byteIndex = 0;
+    var number = 0;
 
-			// format is RGBA, so move 4 steps per pixel
-			for (var index = 0; index < data.length; index += 4) {
-				// Get the average of the RGB (we ignore A)
-				var avg = (data[index] + data[index + 1] + data[index + 2]) / 3;
-				if (avg > settings["threshold"]) {
-					number += Math.pow(2, byteIndex);
-				}
-				byteIndex++;
+    // format is RGBA, so move 4 steps per pixel
+    for (var index = 0; index < data.length; index += 4) {
+        // Get the average of the RGB (we ignore A)
+        var avg = (data[index] + data[index + 1] + data[index + 2]) / 3;
+        if (avg > settings["threshold"]) {
+            number += Math.pow(2, byteIndex);
+        }
+        byteIndex++;
 
-				// if this was the last pixel of a row or the last pixel of the
-				// image, fill up the rest of our byte with zeros so it always contains 8 bits
-				if ((index != 0 && (((index / 4) + 1) % (canvasWidth)) == 0) || (index == data.length - 4)) {
-					var paddingBits = 8 - byteIndex;
-					number = number << paddingBits;
-					output[output_index + 2] = number;
-					output_index++;
-					number = 0;
-					byteIndex = 0;
-				}
+        // if this was the last pixel of a row or the last pixel of the
+        // image, fill up the rest of our byte with zeros so it always contains 8 bits
+        if ((index != 0 && (((index / 4) + 1) % (canvasWidth)) == 0) || (index == data.length - 4)) {
+            var paddingBits = 8 - byteIndex;
+            number = number << paddingBits;
+            output[output_index + 2] = number;
+            output_index++;
+            number = 0;
+            byteIndex = 0;
+        }
 
-				// When we have the complete 8 bits, write them to the output buffer
-				if (byteIndex >= 8) {
-					output[output_index + 2] = number;
-					output_index++;
-					number = 0;
-					byteIndex = 0;
-				}
-			}
+        // When we have the complete 8 bits, write them to the output buffer
+        if (byteIndex >= 8) {
+            output[output_index + 2] = number;
+            output_index++;
+            number = 0;
+            byteIndex = 0;
+        }
+    }
 
-			// Write the output buffer to a file
-			var blob = new Blob([output], { type: "application/octet-stream" });
-			var formData = new FormData();
-			formData.append("data", blob, '/' + filname + '.bin');
+    // Write the output buffer to a file
+    var blob = new Blob([output], {
+        type: "application/octet-stream"
+    });
+    var formData = new FormData();
+    formData.append("data", blob, '/' + filename+ '.bin');
 
-			// POST data using the Fetch API
-			fetch('/edit', {
-				method: 'POST',
-				mode: 'cors',
-				body: formData
-			})
+    // POST data using the Fetch API
+    fetch('/edit', {
+            method: 'POST',
+            mode: 'cors',
+            body: formData
+        })
 
-				// Handle the server response
-				.then(response => response.text())
-				.then(text => {
-					openModalMessage('Success!', '<br>Image saved as ' + filname + '<br>');
-				});
-		};
+        // Handle the server response
+        .then(response => response.text())
+        .then(text => {
+            openModalMessage('Success!', '<br>Image saved as ' + filename+ '<br>');
+        });
+};
 
 		// An images collection with helper methods
 		function Images() {

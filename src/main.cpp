@@ -3,14 +3,16 @@
     
   Copyright (c) 2023, Blueforcer
   admin@blueforcer.de
-  All rights reserved.
+  Some Rights Reserved.
 
   Redistribution and use in source and binary forms, with or without modification, 
   are permitted provided that the following conditions are met:
 
   * Redistributions of source code must retain the above copyright notice, this list 
     of conditions and the following disclaimer.
-    
+  * You may not use the material for commercial purposes.
+  * You must give appropriate credit and indicate if changes were made.
+    You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
   * Redistributions in binary form must reproduce the above copyright notice, this 
     list of conditions and the following disclaimer in the documentation and/or other 
     materials provided with the distribution.

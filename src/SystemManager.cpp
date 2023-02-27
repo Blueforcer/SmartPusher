@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.50";
+const char *VERSION = "2.51";
 
 time_t now;
 tm timeInfo;
@@ -345,7 +345,7 @@ void addImageToRAM(const String &name)
     }
 }
 
-void renderImage(uint8_t x, uint8_t y, const String &name)
+void renderImage(int16_t x, int16_t y, const String &name)
 {
     // Find image in array
     int imageIndex = -1;
@@ -364,11 +364,12 @@ void renderImage(uint8_t x, uint8_t y, const String &name)
         imageIndex = numImages - 1;
     }
     // Display image from RAM buffer
-    uint8_t w = images[imageIndex].buffer[0];
-    uint8_t h = images[imageIndex].buffer[1];
+    uint8_t width = images[imageIndex].buffer[0];
+    uint8_t height = images[imageIndex].buffer[1];
     uint8_t *xbmData = &images[imageIndex].buffer[2];
     size_t xbmDataSize = images[imageIndex].bufferSize - 2;
-    display.drawXbm(x, y, w, h, xbmData);
+
+    display.drawXbm(x, y, width, height, xbmData);
 }
 
 void SystemManager_::renderImagePage()
@@ -438,12 +439,13 @@ void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState
         JsonArray page = pages[pageName].as<JsonArray>();
         for (JsonObject obj : page)
         {
-            int x1 = obj["x"];
-            int y1 = obj["y"];
-            display->setTextAlignment(TEXT_ALIGN_LEFT);
+            uint8_t x1 = obj["x"];
+            uint8_t y1 = obj["y"];
+
             String type = obj["t"].as<String>();
             if (type == "text")
             {
+                display->setTextAlignment(TEXT_ALIGN_LEFT);
                 if (obj.containsKey("s"))
                 {
                     int s = obj["s"];
@@ -497,9 +499,9 @@ void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState
             }
             else if (type == "bar")
             {
-                int w = obj["w"];
-                int h = obj["h"];
-                int v = obj["v"];
+                uint8_t w = obj["w"];
+                uint8_t h = obj["h"];
+                uint8_t v = obj["v"];
                 display->drawProgressBar(x1 + x, y1 + y, w, h, v);
             }
             else

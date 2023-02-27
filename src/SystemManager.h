@@ -1,7 +1,7 @@
 #ifndef SystemManager_h
 #define SystemManager_h
 
-//#define _DEBUG_
+#define _DEBUG_
 #if defined(_DEBUG_)
     #include <Arduino.h>
     #define DEBUG_PRINTLN(x) Serial.println(x);
@@ -23,7 +23,7 @@ private:
     IPAddress primaryDNS;
     IPAddress secondaryDNS;
 public:
-    const char *VERSION = "2.50";
+    const char *VERSION = "2.51";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;

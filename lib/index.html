@@ -330,7 +330,7 @@
 		function horizontal1bit(data, canvasWidth, canvasHeight, filname) {
 			var output = new Uint8Array(Math.ceil(canvasWidth * canvasHeight / 8) + 2);
 			var output_index = 0;
-
+			alert(canvasWidth + "  " +canvasHeight);
 			// Write the width and height to the output buffer
 			output[0] = canvasWidth;
 			output[1] = canvasHeight;
@@ -350,12 +350,7 @@
 				// if this was the last pixel of a row or the last pixel of the
 				// image, fill up the rest of our byte with zeros so it always contains 8 bits
 				if ((index != 0 && (((index / 4) + 1) % (canvasWidth)) == 0) || (index == data.length - 4)) {
-					var paddingBits = 8 - byteIndex;
-					number = number << paddingBits;
-					output[output_index + 2] = number;
-					output_index++;
-					number = 0;
-					byteIndex = 0;
+					byteIndex = -1;
 				}
 
 				// When we have the complete 8 bits, write them to the output buffer
