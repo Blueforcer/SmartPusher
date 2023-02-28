@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.51";
+const char *VERSION = "2.52";
 
 time_t now;
 tm timeInfo;
@@ -167,8 +167,8 @@ bool SystemManager_::loadOptions()
         mws.getOptionValue("Subnet", NET_SN);
         mws.getOptionValue("Primary DNS", NET_PDNS);
         mws.getOptionValue("Secondary DNS", NET_SDNS);
-        mws.getOptionValue("Hide date", SHOW_DATE);
-        mws.getOptionValue("Hide seconds", SHOW_SECONDS);
+        mws.getOptionValue("Show date", SHOW_DATE);
+        mws.getOptionValue("Show seconds", SHOW_SECONDS);
         mws.getOptionValue("Show DateTime page", SHOW_DATETIME);
         mws.getOptionValue("Show Weather page", SHOW_WEATHER);
 
@@ -215,8 +215,8 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Subnet", NET_SN);
     mws.saveOptionValue("Primary DNS", NET_PDNS);
     mws.saveOptionValue("Secondary DNS", NET_SDNS);
-    mws.saveOptionValue("Hide date", SHOW_DATE);
-    mws.saveOptionValue("Hide seconds", SHOW_SECONDS);
+    mws.saveOptionValue("Show date", SHOW_DATE);
+    mws.saveOptionValue("Show seconds", SHOW_SECONDS);
     mws.saveOptionValue("Show DateTime page", SHOW_DATETIME);
     mws.saveOptionValue("Show Weather page", SHOW_WEATHER);
 
@@ -309,7 +309,6 @@ void addImageToRAM(const String &name)
         }
     }
 
-    // Load image from SPIFFS into RAM
     // Load image from SPIFFS into RAM
     File myFile = FILESYSTEM.open("/" + name + ".bin", "r");
     if (myFile)
@@ -431,7 +430,7 @@ void SystemManager_::setCustomPageVariables(String PageName, String variableName
     }
 }
 
-void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState *state, int16_t xOffset, int16_t yOffset)
 {
     String pageName = getPageByIndex(pageIndex);
     if (pageName != "")
@@ -485,24 +484,29 @@ void drawCustomFrame(uint8_t pageIndex, OLEDDisplay *display, OLEDDisplayUiState
                     if (!it->value().is<String>())
                     {
                         DEBUG_PRINTLN("Ungültiger Wert für Schlüssel in " + pageName + ": " + key + "-" + vt);
-                        serializeJson(obj, Serial);
                         break; // Beende die Schleife, um die komplette JSON-Ausgabe nur einmal anzuzeigen
                     }
-                    display->drawString(x1 + x, y1 + y, vt);
+                    display->drawString(x1 + xOffset, y1 + yOffset, vt);
                     ++it;
                 }
             }
             else if (type == "image")
             {
                 String image = obj["i"].as<String>();
-                renderImage(x1 + x, y1 + y, image);
+                renderImage(x1 + xOffset, y1 + yOffset, image);
             }
             else if (type == "bar")
             {
                 uint8_t w = obj["w"];
                 uint8_t h = obj["h"];
                 uint8_t v = obj["v"];
-                display->drawProgressBar(x1 + x, y1 + y, w, h, v);
+                display->drawProgressBar(x1 + xOffset, y1 + yOffset, w, h, v);
+            }
+            else if (type == "line")
+            {
+                uint8_t x1 = obj["x1"];
+                uint8_t y1 = obj["y1"];
+                display->drawLine(x1 + xOffset, y1 + yOffset, x1, y1);
             }
             else
             {
@@ -848,8 +852,7 @@ void SystemManager_::setup()
     if (loadOptions())
         DEBUG_PRINTLN("Application option loaded");
     _MY_CITY = CITY;
-    _SHOW_DATE = SHOW_DATE;
-    _SHOW_SECONDS = SHOW_SECONDS;
+
     ui.setTimePerFrame(TIME_PER_FRAME);
     ui.setTimePerTransition(TIME_PER_TRANSITION);
     if (PAGE_BUTTONS)
@@ -919,6 +922,9 @@ void SystemManager_::setup()
     mws.addCSS(custom_css);
     mws.getRequest()->setContentLength(10240);
     mws.begin();
+
+    _SHOW_DATE = SHOW_DATE;
+    _SHOW_SECONDS = SHOW_SECONDS;
 
     if (SHOW_DATETIME)
         frames.push_back(DateTimeFrame);
