@@ -16,12 +16,15 @@ Functions:
     
 ## HowTo
 
+
 **Wiki**  
 https://github.com/Blueforcer/SmartPusher/wiki
     
 **Discord**  
 https://discord.gg/AbGVY4cG9e  
 
+## Support
+If you like this work, [please consider supporting this project!](https://paypal.me/blueforcer) 
 
 ## Author
 
