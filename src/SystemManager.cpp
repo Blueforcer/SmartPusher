@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.52";
+const char *VERSION = "2.53";
 
 time_t now;
 tm timeInfo;
@@ -831,6 +831,7 @@ void SystemManager_::setup()
 {
     delay(2000);
     startFilesystem();
+    pinMode(32,OUTPUT);
     ui.setTargetFPS(40);
     ui.setIndicatorPosition(BOTTOM);         // You can change this to TOP, LEFT, BOTTOM, RIGHT
     ui.setIndicatorDirection(LEFT_RIGHT);    // Defines where the first frame is located in the bar
