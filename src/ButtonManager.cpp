@@ -123,7 +123,7 @@ void ButtonManager_::handleEvent(AceButton *button, uint8_t eventType, uint8_t b
 
 void ButtonManager_::ShowAnimation(uint8_t type, uint8_t btn)
 {
-    if (SystemManager.ledMode != "OnPush")
+    if (SystemManager.LEDMODE != "OnPush")
         return;
     int count = 1;
     switch (type)
@@ -375,23 +375,23 @@ void ButtonManager_::setButtonLight(uint8_t btn, uint8_t mode)
 void ButtonManager_::setStates()
 {
     uint8_t mode;
-    if (SystemManager.ledMode == "Off")
+    if (SystemManager.LEDMODE == "Off")
     {
         mode = 0;
     }
-    else if (SystemManager.ledMode == "On")
+    else if (SystemManager.LEDMODE == "On")
     {
         mode = 1;
     }
-    else if (SystemManager.ledMode == "Fade")
+    else if (SystemManager.LEDMODE == "Fade")
     {
         mode = 2;
     }
-    else if (SystemManager.ledMode == "Extern")
+    else if (SystemManager.LEDMODE == "Extern")
     {
         mode = 3;
     }
-    else if (SystemManager.ledMode == "OnPush")
+    else if (SystemManager.LEDMODE == "OnPush")
     {
         mode = 4;
     }

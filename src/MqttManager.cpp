@@ -4,7 +4,7 @@
 
 WiFiClient espClient;
 HADevice device;
-HAMqtt mqtt(espClient, device, 18);
+HAMqtt mqtt(espClient, device, 20);
 
 HALight brightness("BRI", HALight::BrightnessFeature);
 
@@ -134,7 +134,7 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 
     if (strTopic.startsWith(SystemManager.MQTT_PREFIX + "/custompage/"))
     {
-        int firstSlash = strTopic.indexOf("/") + 1;
+        int firstSlash = strTopic.indexOf("/custompage/") + 1;
         int secondSlash = strTopic.indexOf("/", firstSlash) + 1;
         String screenName = strTopic.substring(secondSlash, strTopic.indexOf("/", secondSlash));
         String variableName = strTopic.substring(strTopic.lastIndexOf("/") + 1);
@@ -212,7 +212,7 @@ void MqttManager_::setup()
 
     if (SystemManager.HA_DISCOVERY)
     {
-        Serial.println("Starting Homeassistant discorvery");
+        Serial.println("Starting Homeassistant discovery");
 
         device.setUniqueId(mac, sizeof(mac));
         device.setName("SmartPusher");

@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.52";
+const char *VERSION = "2.53";
 
 time_t now;
 tm timeInfo;
@@ -132,53 +132,112 @@ void startFilesystem()
 }
 
 ////////////////////  Load&Save application options from filesystem  ////////////////////
+/// bool SystemManager_::loadOptions()
+///{
+///    if (FILESYSTEM.exists("/config.json"))
+///    {
+///        mws.getOptionValue("Use RGB buttons", RGB_BUTTONS);
+///        mws.getOptionValue("Show customized pages", CUSTOM_PAGES);
+///     mws.getOptionValue("Pushmode for Button 1", BTN1_PUSH);
+///  mws.getOptionValue("Pushmode for Button 2", BTN2_PUSH);
+///        mws.getOptionValue("Pushmode for Button 3", BTN3_PUSH);
+///        mws.getOptionValue("Pushmode for Button 4", BTN4_PUSH);
+///        mws.getOptionValue("Pushmode for Button 5", BTN5_PUSH);
+///        mws.getOptionValue("Pushmode for Button 6", BTN6_PUSH);
+///        mws.getOptionValue("Pushmode for Button 7", BTN7_PUSH);
+///        mws.getOptionValue("Pushmode for Button 8", BTN8_PUSH);
+///        mws.getOptionValue("NTP Server", NTP_SERVER);
+///        mws.getOptionValue("Timezone", NTP_TZ);
+///        mws.getOptionValue("Broker", MQTT_HOST);
+///        mws.getOptionValue("Port", MQTT_PORT);
+///        mws.getOptionValue("Username", MQTT_USER);
+///        mws.getOptionValue("Password", MQTT_PASS);
+///        mws.getOptionValue("Prefix", MQTT_PREFIX);
+///        mws.getOptionValue("Actions over serial", SERIAL_OUT);
+///        mws.getOptionValue("LED Mode", LEDMODE);
+///        mws.getOptionValue("City", CITY);
+///        mws.getOptionValue("Homeassistant discovery", HA_DISCOVERY);
+///        mws.getOptionValue("Duration per Page", TIME_PER_FRAME);
+///        mws.getOptionValue("Transistion duration", TIME_PER_TRANSITION);
+///        mws.getOptionValue("Control with Button 7&8", PAGE_BUTTONS);
+///        mws.getOptionValue("ioBroker advertisement ", IO_BROKER);
+///        mws.getOptionValue("Static IP", NET_STATIC);
+///        mws.getOptionValue("Local IP", NET_IP);
+///        mws.getOptionValue("Gateway", NET_GW);
+///        mws.getOptionValue("Subnet", NET_SN);
+///        mws.getOptionValue("Primary DNS", NET_PDNS);
+///        mws.getOptionValue("Secondary DNS", NET_SDNS);
+///       mws.getOptionValue("Show date", SHOW_DATE);
+///       mws.getOptionValue("Show seconds", SHOW_SECONDS);
+///       mws.getOptionValue("Show DateTime page", SHOW_DATETIME);
+///       mws.getOptionValue("Show Weather page", SHOW_WEATHER);
+///
+///      if (!local_IP.fromString(NET_IP) || !gateway.fromString(NET_GW) || !subnet.fromString(NET_SN) || !primaryDNS.fromString(NET_PDNS) || !secondaryDNS.fromString(NET_SDNS))
+///          NET_STATIC = false;
+///
+///      return true;
+///   }
+///    else
+///       DEBUG_PRINTLN(F("File \"config.json\" not exist"));
+///   return false;
+///}
+
 bool SystemManager_::loadOptions()
 {
     if (FILESYSTEM.exists("/config.json"))
     {
-        mws.getOptionValue("Use RGB buttons", RGB_BUTTONS);
-        mws.getOptionValue("Show customized pages", CUSTOM_PAGES);
-        mws.getOptionValue("Pushmode for Button 1", BTN1_PUSH);
-        mws.getOptionValue("Pushmode for Button 2", BTN2_PUSH);
-        mws.getOptionValue("Pushmode for Button 3", BTN3_PUSH);
-        mws.getOptionValue("Pushmode for Button 4", BTN4_PUSH);
-        mws.getOptionValue("Pushmode for Button 5", BTN5_PUSH);
-        mws.getOptionValue("Pushmode for Button 6", BTN6_PUSH);
-        mws.getOptionValue("Pushmode for Button 7", BTN7_PUSH);
-        mws.getOptionValue("Pushmode for Button 8", BTN8_PUSH);
-        mws.getOptionValue("NTP Server", NTP_SERVER);
-        mws.getOptionValue("Timezone", NTP_TZ);
-        mws.getOptionValue("Broker", MQTT_HOST);
-        mws.getOptionValue("Port", MQTT_PORT);
-        mws.getOptionValue("Username", MQTT_USER);
-        mws.getOptionValue("Password", MQTT_PASS);
-        mws.getOptionValue("Prefix", MQTT_PREFIX);
-        mws.getOptionValue("Actions over serial", SERIAL_OUT);
-        mws.getOptionValue("LED Mode", ledMode);
-        mws.getOptionValue("City", CITY);
-        mws.getOptionValue("Homeassistant discovery", HA_DISCOVERY);
-        mws.getOptionValue("Duration per Page", TIME_PER_FRAME);
-        mws.getOptionValue("Transistion duration", TIME_PER_TRANSITION);
-        mws.getOptionValue("Control with Button 7&8", PAGE_BUTTONS);
-        mws.getOptionValue("ioBroker advertisement ", IO_BROKER);
-        mws.getOptionValue("Static IP", NET_STATIC);
-        mws.getOptionValue("Local IP", NET_IP);
-        mws.getOptionValue("Gateway", NET_GW);
-        mws.getOptionValue("Subnet", NET_SN);
-        mws.getOptionValue("Primary DNS", NET_PDNS);
-        mws.getOptionValue("Secondary DNS", NET_SDNS);
-        mws.getOptionValue("Show date", SHOW_DATE);
-        mws.getOptionValue("Show seconds", SHOW_SECONDS);
-        mws.getOptionValue("Show DateTime page", SHOW_DATETIME);
-        mws.getOptionValue("Show Weather page", SHOW_WEATHER);
+        File file = FILESYSTEM.open("/config.json", "r");
+        DynamicJsonDocument doc(file.size() * 1.33);
+        DeserializationError error = deserializeJson(doc, file);
+        if (error){
+ return false;
+        }
+           
 
+        RGB_BUTTONS = doc["Use RGB buttons"].as<bool>();
+        CUSTOM_PAGES = doc["Show customized pages"].as<bool>();
+        NTP_SERVER = doc["NTP Server"].as<String>();
+        NTP_TZ = doc["Timezone"].as<String>();
+        MQTT_HOST = doc["Broker"].as<String>();
+        MQTT_PORT = doc["Port"];
+        MQTT_USER = doc["Username"].as<String>();
+        MQTT_PASS = doc["Password"].as<String>();
+        MQTT_PREFIX = doc["Prefix"].as<String>();
+        SERIAL_OUT = doc["Actions over serial"].as<bool>();
+        LEDMODE = doc["LED Mode"]["selected"].as<String>();
+        Serial.println(LEDMODE);
+        CITY = doc["City"].as<String>();
+        HA_DISCOVERY = doc["Homeassistant discovery"].as<bool>();
+        TIME_PER_FRAME = doc["Duration per Page"];
+        TIME_PER_TRANSITION = doc["Transistion duration"];
+        PAGE_BUTTONS = doc["Control with Button 7&8"].as<bool>();
+        IO_BROKER = doc["ioBroker advertisement "].as<bool>();
+        NET_STATIC = doc["Static IP"].as<bool>();
+        NET_IP = doc["Local IP"].as<String>();
+        NET_GW = doc["Gateway"].as<String>();
+        NET_SN = doc["Subnet"].as<String>();
+        NET_PDNS = doc["Primary DNS"].as<String>();
+        NET_SDNS = doc["Secondary DNS"].as<String>();
+        SHOW_DATE = doc["Show date"].as<bool>();
+        SHOW_SECONDS = doc["Show seconds"].as<bool>();
+        SHOW_DATETIME = doc["Show DateTime page"].as<bool>();
+        SHOW_WEATHER = doc["Show Weather page"].as<bool>();
+        BTN1_PUSH = doc["Pushmode for Button 1"].as<bool>();
+        BTN2_PUSH = doc["Pushmode for Button 2"].as<bool>();
+        BTN3_PUSH = doc["Pushmode for Button 3"].as<bool>();
+        BTN4_PUSH = doc["Pushmode for Button 4"].as<bool>();
+        BTN5_PUSH = doc["Pushmode for Button 5"].as<bool>();
+        BTN6_PUSH = doc["Pushmode for Button 6"].as<bool>();
+        BTN7_PUSH = doc["Pushmode for Button 7"].as<bool>();
+        BTN8_PUSH = doc["Pushmode for Button 8"].as<bool>();
+        file.close();
         if (!local_IP.fromString(NET_IP) || !gateway.fromString(NET_GW) || !subnet.fromString(NET_SN) || !primaryDNS.fromString(NET_PDNS) || !secondaryDNS.fromString(NET_SDNS))
             NET_STATIC = false;
-
+        Serial.println(F("Configuration loaded"));
         return true;
     }
     else
-        DEBUG_PRINTLN(F("File \"config.json\" not exist"));
+        Serial.println(F("Configuration file not exist"));
     return false;
 }
 
@@ -203,7 +262,7 @@ void SystemManager_::saveOptions()
     mws.saveOptionValue("Password", MQTT_PASS);
     mws.saveOptionValue("Prefix", MQTT_PREFIX);
     mws.saveOptionValue("Actions over serial", SERIAL_OUT);
-    mws.saveOptionValue("LED Mode", ledMode);
+    mws.saveOptionValue("LED Mode", LEDMODE);
     mws.saveOptionValue("City", CITY);
     mws.saveOptionValue("Duration per Page", TIME_PER_FRAME);
     mws.saveOptionValue("Transistion duration", TIME_PER_TRANSITION);
@@ -1054,7 +1113,7 @@ void SystemManager_::tick()
             // You can do some work here
             // Don't do stuff if you are below your
             // time budget.
-            delay(remainingTimeBudget);
+            // delay(remainingTimeBudget);
         }
     }
 }

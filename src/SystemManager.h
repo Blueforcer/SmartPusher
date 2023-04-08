@@ -23,7 +23,7 @@ private:
     IPAddress primaryDNS;
     IPAddress secondaryDNS;
 public:
-    const char *VERSION = "2.52";
+    const char *VERSION = "2.53";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
@@ -56,7 +56,7 @@ public:
     String NET_PDNS = "8.8.8.8";
     String NET_SDNS = "1.1.1.1";
 
-    String ledMode = "On";
+    String LEDMODE = "On";
     int TIME_PER_FRAME = 7000;
     int TIME_PER_TRANSITION = 2000;
     String NTP_SERVER = "de.pool.ntp.org";
