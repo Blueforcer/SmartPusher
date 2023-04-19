@@ -23,7 +23,7 @@ private:
     IPAddress primaryDNS;
     IPAddress secondaryDNS;
 public:
-    const char *VERSION = "2.54";
+    const char *VERSION = "2.55";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
@@ -89,6 +89,7 @@ public:
     boolean getBool(const char *name);
     bool loadOptions();
     void saveOptions();
+    void RGBControl(uint8_t pin, uint8_t mix);
 };
 
 extern SystemManager_ &SystemManager;

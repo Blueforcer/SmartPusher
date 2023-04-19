@@ -150,6 +150,86 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
             break;
         }
     }
+
+
+    if (SystemManager.RGB_BUTTONS)
+    {
+    if (strTopic == SystemManager.MQTT_PREFIX + String("/button1/Blau"))
+    {
+       SystemManager.RGBControl(15, atoi(strPayload.c_str()));
+       Serial.println("Button1 Blau: " + strPayload);
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button1/Gruen"))
+    {
+       SystemManager.RGBControl(14, atoi(strPayload.c_str()));
+       Serial.println("Button1 Gruen: " + strPayload);
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button2/Blau"))
+    {
+       SystemManager.RGBControl(13, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button2/Gruen"))
+    {
+       SystemManager.RGBControl(12, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button3/Blau"))
+    {
+       SystemManager.RGBControl(11, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button3/Gruen"))
+    {
+       SystemManager.RGBControl(10, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button4/Blau"))
+    {
+       SystemManager.RGBControl(9, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button4/Gruen"))
+    {
+       SystemManager.RGBControl(8, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button5/Blau"))
+    {
+       SystemManager.RGBControl(7, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button5/Gruen"))
+    {
+       SystemManager.RGBControl(6, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button6/Blau"))
+    {
+       SystemManager.RGBControl(5, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button6/Gruen"))
+    {
+       SystemManager.RGBControl(4, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button7/Blau"))
+    {
+       SystemManager.RGBControl(3, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button7/Gruen"))
+    {
+       SystemManager.RGBControl(2, atoi(strPayload.c_str()));
+    }
+
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button8/Blau"))
+    {
+       SystemManager.RGBControl(1, atoi(strPayload.c_str()));
+    }
+     if (strTopic == SystemManager.MQTT_PREFIX + String("/button8/Gruen"))
+    {
+       SystemManager.RGBControl(0, atoi(strPayload.c_str()));
+    }
+
+    } // END RGBBUTTON CHECK
+
+
 }
 
 void onMqttConnected()
@@ -177,6 +257,30 @@ void onMqttConnected()
         String topic = prefix + "/button" + String(i) + "/state";
         mqtt.subscribe(topic.c_str());
     }
+
+  mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button1/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button1/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button2/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button2/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button3/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button3/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button4/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button4/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button5/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button5/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button6/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button6/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button7/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button7/Gruen")).c_str());
+        
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button8/Blau")).c_str());
+        mqtt.subscribe((SystemManager.MQTT_PREFIX + String("/button8/Gruen")).c_str());
 
     mqtt.subscribe((prefix + String("/brightness")).c_str());
     mqtt.subscribe((prefix + String("/message")).c_str());
