@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.53";
+const char *VERSION = "2.54";
 
 time_t now;
 tm timeInfo;
