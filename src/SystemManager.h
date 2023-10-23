@@ -23,13 +23,14 @@ private:
     IPAddress primaryDNS;
     IPAddress secondaryDNS;
 public:
-    const char *VERSION = "2.54";
+    const char *VERSION = "2.55";
     String MQTT_HOST;
     uint16_t MQTT_PORT = 1883;
     String MQTT_USER;
     String MQTT_PASS;
     String MQTT_PREFIX = "SmartPusher";
     String CITY = "Berlin,de";
+    const char *uniqueID;
     bool IS_METRIC = true;
     bool BTN1_PUSH = false;
     bool BTN2_PUSH = false;

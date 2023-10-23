@@ -37,7 +37,7 @@ HTTPClient http;
 #define DISPLAY_WIDTH 128 // OLED display width, in pixels
 #define DISPLAY_HEIGHT 64 // OLED display height, in pixels
 int16_t x_con = 128;
-const char *VERSION = "2.54";
+const char *VERSION = "2.55";
 
 time_t now;
 tm timeInfo;
@@ -131,6 +131,17 @@ void startFilesystem()
     }
 }
 
+
+
+char *getID()
+{
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    char *macStr = new char[24];
+    snprintf(macStr, 24, "SP_%02x%02x%02x", mac[3], mac[4], mac[5]);
+    return macStr;
+}
+
 ////////////////////  Load&Save application options from filesystem  ////////////////////
 /// bool SystemManager_::loadOptions()
 ///{
@@ -184,6 +195,9 @@ void startFilesystem()
 
 bool SystemManager_::loadOptions()
 {
+
+      uniqueID = getID();
+      MQTT_PREFIX=String(uniqueID);
     if (FILESYSTEM.exists("/config.json"))
     {
         File file = FILESYSTEM.open("/config.json", "r");
@@ -923,7 +937,8 @@ void SystemManager_::setup()
         WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
     }
 
-    IPAddress myIP = mws.startWiFi(10000, "SmartPusher", "12345678");
+    WiFi.setHostname(uniqueID); // define hostname
+    IPAddress myIP = mws.startWiFi(10000, uniqueID, "12345678");
     connected = !(myIP == IPAddress(192, 168, 4, 1));
     if (connected)
     {
