@@ -90,6 +90,7 @@ public:
     boolean getBool(const char *name);
     bool loadOptions();
     void saveOptions();
+    void RGBControl(uint8_t pin, uint8_t mix);
 };
 
 extern SystemManager_ &SystemManager;
