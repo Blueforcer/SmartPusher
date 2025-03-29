@@ -31,7 +31,8 @@ typedef struct
 #define MAX_IMAGES 10         // maximum number of images that can be stored in RAM
 ImageData images[MAX_IMAGES]; // array of stored images
 int numImages = 0;            // number of images stored in the array
-
+unsigned long previousMillisWiFi = 0;
+unsigned long intervalWiFi = 30000;
 SSD1306 display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
 File fsUploadFile;
@@ -585,7 +586,7 @@ void SystemManager_::setCustomPageVariables(String PageName, String variableName
         return;
     if (pages.containsKey(PageName))
     {
-        pages.garbageCollect();
+        //pages.garbageCollect();
         JsonArray page = pages[PageName].as<JsonArray>();
         for (JsonObject obj : page)
         {
@@ -1046,7 +1047,7 @@ void SystemManager_::setup()
     {
         WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
     }
-
+    WiFi.setAutoReconnect(true);
     WiFi.setHostname(uniqueID); // define hostname
     IPAddress myIP = mws.startWiFi(10000, uniqueID, "12345678");
     connected = !(myIP == IPAddress(192, 168, 4, 1));
@@ -1245,6 +1246,16 @@ void SystemManager_::tick()
             // delay(remainingTimeBudget);
         }
     }
+
+     unsigned long currentMillisWiFi = millis();
+  // if WiFi is down, try reconnecting every CHECK_WIFI_TIME seconds
+  if ((WiFi.status() != WL_CONNECTED) && (currentMillisWiFi - previousMillisWiFi >=intervalWiFi)) {
+    Serial.print(millis());
+    Serial.println("Reconnecting to WiFi...");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previousMillisWiFi = currentMillisWiFi;
+  }
 }
 
 void SystemManager_::show()
